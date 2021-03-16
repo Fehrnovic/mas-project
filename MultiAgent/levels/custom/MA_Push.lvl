@@ -1,0 +1,22 @@
+#domain
+hospital
+#levelname
+MA_Push
+#colors
+blue: 0, A
+green: 1, B
+#initial
++++++++
++0A B1+
++++ +++
++++ +++
++++ +++
++++++++
+#goal
++++++++
++     +
++++ +++
++++A+++
++++B+++
++++++++
+#end
