@@ -18,5 +18,12 @@ namespace MultiAgent.searchClient
             Letter = letter;
             Color = color;
         }
+
+        public Box(char letter, Color color, Position position)
+        {
+            Letter = letter;
+            Color = color;
+            Position = position;
+        }
     }
 }
