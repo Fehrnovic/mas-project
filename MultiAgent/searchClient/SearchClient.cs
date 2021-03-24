@@ -8,7 +8,7 @@ namespace MultiAgent.searchClient
 {
     public static class SearchClient
     {
-        public static void ParseLevel()
+        public static State ParseLevel()
         {
             // We can assume that the level file is conforming to specification, since the server verifies this.
             // Read domain
@@ -110,7 +110,11 @@ namespace MultiAgent.searchClient
                 line = Console.ReadLine();
             }
 
-            Console.Write("Hej");
+            State.AgentGoals = agentGoals;
+            State.BoxGoals = boxGoals;
+            State.Walls = walls;
+
+            return new State(agents, boxes);
         }
     }
 }
