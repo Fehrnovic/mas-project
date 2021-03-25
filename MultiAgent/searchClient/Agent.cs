@@ -13,7 +13,7 @@ namespace MultiAgent.searchClient
         public Color Color;
         public Position Position;
 
-        public Agent(int number,  Color color)
+        public Agent(int number, Color color)
         {
             Number = number;
             Color = color;
@@ -22,6 +22,13 @@ namespace MultiAgent.searchClient
         public Agent(int number, Position position)
         {
             Number = number;
+            Position = position;
+        }
+
+        public Agent(int number, Color color, Position position)
+        {
+            Number = number;
+            Color = color;
             Position = position;
         }
     }

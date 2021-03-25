@@ -9,11 +9,18 @@ namespace MultiAgent.searchClient
 {
     public class State
     {
-        public List<Agent> Agents;
-        public List<Box> Boxes;
+        // Static properties
         public static List<Agent> AgentGoals;
         public static List<Box> BoxGoals;
         public static bool[,] Walls;
+
+        // State information
+        public List<Agent> Agents;
+        public List<Box> Boxes;
+        public Action[] JointAction;
+
+        public State Parent;
+        public int Depth;
 
         public State(List<Agent> agents, List<Box> boxes)
         {
@@ -21,9 +28,62 @@ namespace MultiAgent.searchClient
             Boxes = boxes;
         }
 
-        public State(State state, Action[] actions)
+        public State(State parent, Action[] jointAction)
         {
-            // Do all actions to create new state
+            // Copy parent information
+            var agents = parent.Agents.Select(a => new Agent(a.Number, a.Color, a.Position)).ToList();
+            var boxes = parent.Boxes.Select(b => new Box(b.Letter, b.Color, b.Position)).ToList();
+
+            Parent = parent;
+            JointAction = jointAction;
+            Depth = parent.Depth + 1;
+
+            // Apply actions 
+            foreach (var agent in Agents)
+            {
+                var agentAction = jointAction[agent.Number];
+
+                Box box;
+
+                switch (agentAction.Type)
+                {
+                    case ActionType.NoOp:
+                        break;
+                    case ActionType.Move:
+                        agent.Position.Row += agentAction.AgentRowDelta;
+                        agent.Position.Col += agentAction.AgentColDelta;
+
+                        break;
+                    case ActionType.Push:
+                        agent.Position.Row += agentAction.AgentRowDelta;
+                        agent.Position.Col += agentAction.AgentColDelta;
+
+                        // Get the box character
+                        box = BoxAt(new Position(agent.Position.Row, agent.Position.Col));
+
+                        box.Position.Row += agentAction.BoxRowDelta;
+                        box.Position.Col += agentAction.BoxColDelta;
+
+                        break;
+                    case ActionType.Pull:
+                        // Find box before pull
+                        box = BoxAt(new Position(agent.Position.Row - agentAction.BoxRowDelta,
+                            agent.Position.Col - agentAction.BoxColDelta));
+
+                        // Move agent
+                        agent.Position.Row += agentAction.AgentRowDelta;
+                        agent.Position.Col += agentAction.AgentColDelta;
+
+
+                        // Update box position
+                        box.Position.Row += agentAction.BoxRowDelta;
+                        box.Position.Col += agentAction.BoxColDelta;
+
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
         }
 
         public List<State> GetExpandedStates()
@@ -76,7 +136,7 @@ namespace MultiAgent.searchClient
                         {
                             done = true;
                         }
-                    };
+                    }
                 }
 
                 // Last permutation?
@@ -237,7 +297,8 @@ namespace MultiAgent.searchClient
                     }
 
                     // Agents or boxes moving into same cell?
-                    if (destinationRows[agent1] == destinationRows[agent2] && destinationCols[agent1] == destinationCols[agent2])
+                    if (destinationRows[agent1] == destinationRows[agent2] &&
+                        destinationCols[agent1] == destinationCols[agent2])
                     {
                         return true;
                     }
@@ -247,7 +308,6 @@ namespace MultiAgent.searchClient
                     {
                         return true;
                     }
-
                 }
             }
 
