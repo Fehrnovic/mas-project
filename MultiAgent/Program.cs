@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using Action = MultiAgent.searchClient.Action;
 
 namespace MultiAgent
 {
@@ -23,12 +24,27 @@ namespace MultiAgent
                 }
             }
 
-            SearchClient.ParseLevel();
+            var initialState = SearchClient.ParseLevel();
 
-            Console.Write("Move(S)");
-            Console.WriteLine();
-            Console.Write("Move(E)");
-            Console.WriteLine();
+            Action[][] plan = GraphSearch.Search(initialState, new BFSFrontier());
+
+            if (plan == null)
+            {
+                Console.Error.WriteLine("Unable to solve level.");
+                Environment.Exit(0);
+            }
+
+            foreach (var jointAction in plan)
+            {
+                for (int action = 1; action < jointAction.Length; ++action)
+                {
+                    Console.Error.Write("|");
+                    Console.Error.Write(jointAction[action].Name);
+                }
+                Console.Error.WriteLine();
+                // We must read the server's response to not fill up the stdin buffer and block the server.
+                Console.ReadLine();
+            }
         }
     }
 }

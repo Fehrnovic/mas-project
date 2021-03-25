@@ -21,7 +21,9 @@ namespace MultiAgent.searchClient
 
         public State Parent;
         public int Depth;
-
+        
+        private int Hash = 0;
+        
         public State(List<Agent> agents, List<Box> boxes)
         {
             Agents = agents;
@@ -31,8 +33,8 @@ namespace MultiAgent.searchClient
         public State(State parent, Action[] jointAction)
         {
             // Copy parent information
-            var agents = parent.Agents.Select(a => new Agent(a.Number, a.Color, a.Position)).ToList();
-            var boxes = parent.Boxes.Select(b => new Box(b.Letter, b.Color, b.Position)).ToList();
+            Agents = parent.Agents.Select(a => new Agent(a.Number, a.Color, new Position(a.Position.Row, a.Position.Col))).ToList();
+            Boxes = parent.Boxes.Select(b => new Box(b.Letter, b.Color, new Position(b.Position.Row, b.Position.Col))).ToList();
 
             Parent = parent;
             JointAction = jointAction;
@@ -319,14 +321,99 @@ namespace MultiAgent.searchClient
             return !State.Walls[position.Row, position.Col] && BoxAt(position) == null && AgentAt(position) == null;
         }
 
-        private Agent AgentAt(Position position)
+        public Agent AgentAt(Position position)
         {
-            return Agents.FirstOrDefault(a => a.Position == position);
+            return Agents.FirstOrDefault(a => a.Position.Equals(position));
         }
 
         private Box BoxAt(Position position)
         {
-            return Boxes.FirstOrDefault(b => b.Position == position);
+            return Boxes.FirstOrDefault(b => b.Position.Equals(position));
+        }
+
+        public bool IsGoalState()
+        {
+            var agentsMatch = !AgentGoals.Any() ||
+                              AgentGoals.All(agentGoal =>
+                                  Agents.Exists(agent =>
+                                      agentGoal.Number == agent.Number && agentGoal.Position == agent.Position));
+
+            var boxesMatch = !BoxGoals.Any() || BoxGoals.All(boxGoal =>
+                Boxes.Exists(box => boxGoal.Letter == box.Letter && boxGoal.Position == box.Position));
+
+            return agentsMatch && boxesMatch;
+        }
+
+        public Action[][] ExtractPlan()
+        {
+            Action[][] plan = new Action[this.Depth][];
+            var state = this;
+            while (state.JointAction != null)
+            {
+                plan[state.Depth - 1] = state.JointAction;
+                state = state.Parent;
+            }
+
+            return plan;
+        }
+
+        public override string ToString()
+        {
+            StringBuilder s = new StringBuilder();
+            for (int row = 0; row < Walls.GetLength(0); row++)
+            {
+                for (int col = 0; col < Walls.GetLength(1); col++)
+                {
+                    var box = BoxAt(new Position(row, col));
+                    var agent = AgentAt(new Position(row, col));
+                    if (box != null)
+                    {
+                        s.Append(box.Letter);
+                    }
+                    else if (Walls[row, col])
+                    {
+                        s.Append("+");
+                    }
+                    else if (agent != null)
+                    {
+                        s.Append(agent.Number);
+                    }
+                    else
+                    {
+                        s.Append(" ");
+                    }
+                }
+
+                s.Append("\n");
+            }
+
+            return s.ToString();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is State state)
+            {
+                return Boxes == state.Boxes && Agents == state.Agents;
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            if (Hash == 0) {
+                var prime = 31;
+                var result = 1;
+                result = prime * result + Walls.GetHashCode();
+                result = prime * result + AgentGoals.GetHashCode();
+                result = prime * result + BoxGoals.GetHashCode();
+                result = prime * result + Agents.GetHashCode();
+                result = prime * result + Boxes.GetHashCode();
+                
+                Hash = result;
+            }
+            return Hash;
         }
     }
 }

@@ -25,5 +25,20 @@ namespace MultiAgent.searchClient
             Color = color;
             Position = position;
         }
+        
+        public override bool Equals(object? obj)
+        {
+            if (obj is Box box)
+            {
+                return Letter == box.Letter && Color == box.Color == Position.Equals(box.Position);
+            }
+
+            return false;
+        }
+        
+        public override int GetHashCode()
+        {
+            return Letter.GetHashCode() + Color.GetHashCode() + Position.GetHashCode();
+        }
     }
 }
