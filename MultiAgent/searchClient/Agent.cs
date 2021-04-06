@@ -9,8 +9,8 @@ namespace MultiAgent.searchClient
 {
     public class Agent
     {
-        public int Number;
-        public Color Color;
+        public readonly int Number;
+        public readonly Color Color;
         public Position Position;
 
         public Agent(int number, Color color)
@@ -44,7 +44,7 @@ namespace MultiAgent.searchClient
 
         public override int GetHashCode()
         {
-            return Number.GetHashCode() + Color.GetHashCode() + Position.GetHashCode();
+            return HashCode.Combine(Number, Color, Position);
         }
     }
 }

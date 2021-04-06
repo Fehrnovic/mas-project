@@ -8,7 +8,7 @@ namespace MultiAgent.searchClient
     {
         public static Stopwatch timer = new Stopwatch();
 
-        public static Action[][] Search(State initialState, Frontier frontier)
+        public static Action[][] Search(State initialState, IFrontier frontier)
         {
             timer.Start();
 
@@ -57,11 +57,6 @@ namespace MultiAgent.searchClient
 
                 var reachableStates = state.GetExpandedStates();
 
-                var h1 = reachableStates[0].GetHashCode();
-                var h2 = reachableStates[1].GetHashCode();
-                var h3 = reachableStates[2].GetHashCode();
-                var h4 = state.GetHashCode();
-                    
                 foreach (var reachableState in reachableStates)
                 {
                     if (!frontier.Contains(reachableState) && !exploredStates.Contains(reachableState))
@@ -72,7 +67,7 @@ namespace MultiAgent.searchClient
             }
         }
 
-        private static void PrintSearchStatus(HashSet<State> exploredStates, Frontier frontier)
+        private static void PrintSearchStatus(HashSet<State> exploredStates, IFrontier frontier)
         {
             string statusTemplate = "#Expanded: %,8d, #Frontier: %,8d, #Generated: %,8d, Time: %3.3f s\n%s\n";
             double elapsedTime = (timer.ElapsedMilliseconds) / 1000;

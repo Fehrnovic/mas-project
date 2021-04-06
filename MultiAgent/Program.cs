@@ -36,12 +36,14 @@ namespace MultiAgent
 
             foreach (var jointAction in plan)
             {
+                Console.Write(jointAction[0].Name);
+
                 for (int action = 1; action < jointAction.Length; ++action)
                 {
-                    Console.Error.Write("|");
-                    Console.Error.Write(jointAction[action].Name);
+                    Console.Write("|");
+                    Console.Write(jointAction[action].Name);
                 }
-                Console.Error.WriteLine();
+                Console.WriteLine();
                 // We must read the server's response to not fill up the stdin buffer and block the server.
                 Console.ReadLine();
             }

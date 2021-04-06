@@ -28,7 +28,7 @@ namespace MultiAgent.searchClient
 
         public override int GetHashCode()
         {
-            return Col.GetHashCode() + Row.GetHashCode();
+            return HashCode.Combine(Row, Col);
         }
 
         public override string ToString()

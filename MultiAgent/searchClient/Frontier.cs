@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace MultiAgent.searchClient
 {
-    public interface Frontier
+    public interface IFrontier
     {
         void Add(State state);
         State Pop();
@@ -12,7 +12,7 @@ namespace MultiAgent.searchClient
         bool Contains(State state);
         string GetName();
     }
-    public class BFSFrontier : Frontier
+    public class BFSFrontier : IFrontier
     {
         public readonly Queue<State> Queue = new Queue<State>();
         public readonly HashSet<State> Set = new HashSet<State>();

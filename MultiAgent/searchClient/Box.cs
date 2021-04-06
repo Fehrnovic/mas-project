@@ -9,9 +9,9 @@ namespace MultiAgent.searchClient
 {
     public class Box
     {
-        public char Letter;
+        public readonly char Letter;
         public Position Position;
-        public Color Color;
+        public readonly Color Color;
 
         public Box(char letter,  Color color)
         {
@@ -38,7 +38,7 @@ namespace MultiAgent.searchClient
         
         public override int GetHashCode()
         {
-            return Letter.GetHashCode() + Color.GetHashCode() + Position.GetHashCode();
+            return HashCode.Combine(Letter, Color, Position);
         }
     }
 }

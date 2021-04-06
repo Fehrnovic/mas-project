@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,15 +16,15 @@ namespace MultiAgent.searchClient
         public static bool[,] Walls;
 
         // State information
-        public List<Agent> Agents;
-        public List<Box> Boxes;
+        public readonly List<Agent> Agents;
+        public readonly List<Box> Boxes;
         public Action[] JointAction;
 
         public State Parent;
         public int Depth;
-        
+
         private int Hash = 0;
-        
+
         public State(List<Agent> agents, List<Box> boxes)
         {
             Agents = agents;
@@ -37,7 +38,8 @@ namespace MultiAgent.searchClient
             Boxes = parent.Boxes.Select(b => new Box(b.Letter, b.Color, new Position(b.Position.Row, b.Position.Col))).ToList();
 
             Parent = parent;
-            JointAction = jointAction;
+            JointAction = jointAction.Select(a =>
+                new Action(a.Name, a.Type, a.AgentRowDelta, a.AgentColDelta, a.BoxRowDelta, a.BoxColDelta)).ToArray();
             Depth = parent.Depth + 1;
 
             // Apply actions 
@@ -336,10 +338,10 @@ namespace MultiAgent.searchClient
             var agentsMatch = !AgentGoals.Any() ||
                               AgentGoals.All(agentGoal =>
                                   Agents.Exists(agent =>
-                                      agentGoal.Number == agent.Number && agentGoal.Position == agent.Position));
+                                      agentGoal.Number == agent.Number && agentGoal.Position.Equals(agent.Position)));
 
             var boxesMatch = !BoxGoals.Any() || BoxGoals.All(boxGoal =>
-                Boxes.Exists(box => boxGoal.Letter == box.Letter && boxGoal.Position == box.Position));
+                Boxes.Exists(box => boxGoal.Letter == box.Letter && boxGoal.Position.Equals(box.Position)));
 
             return agentsMatch && boxesMatch;
         }
@@ -392,27 +394,32 @@ namespace MultiAgent.searchClient
 
         public override bool Equals(object? obj)
         {
-            if (obj is State state)
+            if (obj is not State state)
             {
-                return Boxes == state.Boxes && Agents == state.Agents;
+                return false;
             }
 
-            return false;
+            // This should never occur but is kept for safety
+            if (Boxes.Count != state.Boxes.Count || Agents.Count != state.Agents.Count)
+            {
+                return false;
+            }
+
+            var test = !Boxes.Except(state.Boxes).Any() && !Agents.Except(state.Agents).Any();
+            return test;
         }
 
         public override int GetHashCode()
         {
-            if (Hash == 0) {
-                var prime = 31;
-                var result = 1;
-                result = prime * result + Walls.GetHashCode();
-                result = prime * result + AgentGoals.GetHashCode();
-                result = prime * result + BoxGoals.GetHashCode();
-                result = prime * result + Agents.GetHashCode();
-                result = prime * result + Boxes.GetHashCode();
-                
-                Hash = result;
+            if (Hash == 0)
+            {
+                var hashCode = new HashCode();
+                Agents.ForEach(a => hashCode.Add(a));
+                Boxes.ForEach(a => hashCode.Add(a));
+
+                Hash = hashCode.ToHashCode();
             }
+
             return Hash;
         }
     }

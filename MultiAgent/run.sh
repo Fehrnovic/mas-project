@@ -3,10 +3,10 @@ MEMORY="-Xmx16g"
 FRONTIER="-greedy"
 LEVEL="levels/MAPF00.lvl"
 SPEED=500
-TIMEOUT=180
+TIMEOUT=1800000
 
 # Set to 1 to enable debugging
-DEBUG=1
+DEBUG=0
 
 # Compile
 dotnet build
