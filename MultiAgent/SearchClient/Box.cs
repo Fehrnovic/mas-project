@@ -26,7 +26,7 @@ namespace MultiAgent.searchClient
             Position = position;
         }
         
-        public override bool Equals(object? obj)
+        public override bool Equals(object obj)
         {
             if (obj is Box box)
             {

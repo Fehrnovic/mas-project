@@ -42,7 +42,7 @@ namespace MultiAgent.searchClient
                 new Action(a.Name, a.Type, a.AgentRowDelta, a.AgentColDelta, a.BoxRowDelta, a.BoxColDelta)).ToArray();
             Depth = parent.Depth + 1;
 
-            // Apply actions 
+            // Apply actions
             foreach (var agent in Agents)
             {
                 var agentAction = jointAction[agent.Number];
@@ -93,10 +93,10 @@ namespace MultiAgent.searchClient
         public List<State> GetExpandedStates()
         {
             // Determine list of applicable actions for each individual agent.
-            Dictionary<Agent, List<Action>> applicableActions = new Dictionary<Agent, List<Action>>();
+            Dictionary<Agent, List<Action>> applicableActions = new Dictionary<Agent, List<Action>>(Agents.Count);
             foreach (var agent in Agents)
             {
-                List<Action> applicableAgentActions = new List<Action>();
+                List<Action> applicableAgentActions = new List<Action>(Action.AllActions.Count);
                 foreach (var action in Action.AllActions)
                 {
                     if (IsApplicable(agent, action))
@@ -109,9 +109,9 @@ namespace MultiAgent.searchClient
             }
 
             // Iterate over joint actions, check conflict and generate child states.
-            Action[] jointAction = new Action[Agents.Count];
-            int[] actionsPermutation = new int[Agents.Count];
-            List<State> expandedStates = new List<State>();
+            var jointAction = new Action[Agents.Count];
+            var actionsPermutation = new int[Agents.Count];
+            var expandedStates = new List<State>(32);
             while (true)
             {
                 foreach (var agent in Agents)
@@ -125,7 +125,7 @@ namespace MultiAgent.searchClient
                 }
 
                 // Advance permutation
-                bool done = false;
+                var done = false;
                 foreach (var agent in Agents)
                 {
                     if (actionsPermutation[agent.Number] < applicableActions[agent].Count - 1)
@@ -150,7 +150,7 @@ namespace MultiAgent.searchClient
                 }
             }
 
-            return expandedStates.OrderBy(_ => Guid.NewGuid()).ToList();
+            return expandedStates;
         }
 
         private bool IsApplicable(Agent agent, Action action)
@@ -234,14 +234,14 @@ namespace MultiAgent.searchClient
 
         private bool IsConflicting(Action[] jointAction)
         {
-            int[] destinationRows = new int[Agents.Count]; // row of new cell to become occupied by action
-            int[] destinationCols = new int[Agents.Count]; // column of new cell to become occupied by action
-            int[] boxRows = new int[Agents.Count]; // current row of box moved by action
-            int[] boxCols = new int[Agents.Count]; // current column of box moved by action
+            var destinationRows = new int[Agents.Count]; // row of new cell to become occupied by action
+            var destinationCols = new int[Agents.Count]; // column of new cell to become occupied by action
+            var boxRows = new int[Agents.Count]; // current row of box moved by action
+            var boxCols = new int[Agents.Count]; // current column of box moved by action
 
             foreach (var agent in Agents)
             {
-                Action action = jointAction[agent.Number];
+                var action = jointAction[agent.Number];
                 int boxRow;
                 int boxCol;
 
@@ -286,7 +286,7 @@ namespace MultiAgent.searchClient
                 }
             }
 
-            for (int agent1 = 0; agent1 < Agents.Count; ++agent1)
+            for (var agent1 = 0; agent1 < Agents.Count; ++agent1)
             {
                 if (jointAction[agent1].Type == ActionType.NoOp)
                 {
@@ -320,7 +320,7 @@ namespace MultiAgent.searchClient
 
         private bool CellIsFree(Position position)
         {
-            return !State.Walls[position.Row, position.Col] && BoxAt(position) == null && AgentAt(position) == null;
+            return !Walls[position.Row, position.Col] && BoxAt(position) == null && AgentAt(position) == null;
         }
 
         public Agent AgentAt(Position position)
@@ -348,7 +348,7 @@ namespace MultiAgent.searchClient
 
         public Action[][] ExtractPlan()
         {
-            Action[][] plan = new Action[this.Depth][];
+            var plan = new Action[this.Depth][];
             var state = this;
             while (state.JointAction != null)
             {
@@ -361,10 +361,10 @@ namespace MultiAgent.searchClient
 
         public override string ToString()
         {
-            StringBuilder s = new StringBuilder();
-            for (int row = 0; row < Walls.GetLength(0); row++)
+            var s = new StringBuilder();
+            for (var row = 0; row < Walls.GetLength(0); row++)
             {
-                for (int col = 0; col < Walls.GetLength(1); col++)
+                for (var col = 0; col < Walls.GetLength(1); col++)
                 {
                     var box = BoxAt(new Position(row, col));
                     var agent = AgentAt(new Position(row, col));
@@ -392,7 +392,7 @@ namespace MultiAgent.searchClient
             return s.ToString();
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals(object obj)
         {
             if (obj is not State state)
             {
@@ -400,13 +400,12 @@ namespace MultiAgent.searchClient
             }
 
             // This should never occur but is kept for safety
-            if (Boxes.Count != state.Boxes.Count || Agents.Count != state.Agents.Count)
-            {
-                return false;
-            }
+            // if (Boxes.Count != state.Boxes.Count || Agents.Count != state.Agents.Count)
+            // {
+            //     return false;
+            // }
 
-            var test = !Boxes.Except(state.Boxes).Any() && !Agents.Except(state.Agents).Any();
-            return test;
+            return !Boxes.Except(state.Boxes).Any() && !Agents.Except(state.Agents).Any();
         }
 
         public override int GetHashCode()

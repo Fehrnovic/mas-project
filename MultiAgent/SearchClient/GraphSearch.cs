@@ -19,7 +19,7 @@ namespace MultiAgent.searchClient
 
             while (true)
             {
-                if (++iterations % 10000 == 0)
+                if (++iterations % 100000 == 0)
                 {
                     PrintSearchStatus(exploredStates, frontier);
                 }
@@ -30,11 +30,11 @@ namespace MultiAgent.searchClient
                 }
 
                 State state = frontier.Pop();
-
-                if (iterations % 1000 == 0)
-                {
-                    Console.Error.WriteLine(state.ToString());
-                }
+                //
+                // if (iterations % 100000 == 0)
+                // {
+                //     Console.Error.WriteLine(state.ToString());
+                // }
 
                 // Console.WriteLine(state.Agents.Count);
                 // Console.WriteLine(state.Agents[0].Position.Row + " " + state.Agents[0].Position.Col);
@@ -69,10 +69,9 @@ namespace MultiAgent.searchClient
 
         private static void PrintSearchStatus(HashSet<State> exploredStates, IFrontier frontier)
         {
-            string statusTemplate = "#Expanded: %,8d, #Frontier: %,8d, #Generated: %,8d, Time: %3.3f s\n%s\n";
             double elapsedTime = (timer.ElapsedMilliseconds) / 1000;
             Console.Error.WriteLine(
-                $"#Expanded {exploredStates.Count}, #Frontier: {frontier.Size()}, #Generated: {exploredStates.Count}, Time: {elapsedTime} \n");
+                $"#Expanded {exploredStates.Count}, #Frontier: {frontier.Size()}, #Generated: {exploredStates.Count + frontier.Size()}, Time: {elapsedTime} \n");
         }
     }
 }
