@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace MultiAgent.searchClient
 {
@@ -38,8 +35,9 @@ namespace MultiAgent.searchClient
             Boxes = parent.Boxes.Select(b => new Box(b.Letter, b.Color, new Position(b.Position.Row, b.Position.Col))).ToList();
 
             Parent = parent;
-            JointAction = jointAction.Select(a =>
-                new Action(a.Name, a.Type, a.AgentRowDelta, a.AgentColDelta, a.BoxRowDelta, a.BoxColDelta)).ToArray();
+            JointAction = jointAction.Select(
+                a => new Action(a.Name, a.Type, a.AgentRowDelta, a.AgentColDelta, a.BoxRowDelta, a.BoxColDelta)
+            ).ToArray();
             Depth = parent.Depth + 1;
 
             // Apply actions

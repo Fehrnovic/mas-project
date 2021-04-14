@@ -17,7 +17,8 @@ namespace MultiAgent
             ShouldDebug(args);
 
             // Read from file (FileBuffer) if level name is specified. Use Console otherwise
-            var initialState = ParseLevel("SAFirefly.lvl");
+            // var initialState = ParseLevel("SAFirefly.lvl");
+            var initialState = ParseLevel();
 
             var plan = GraphSearch.Search(initialState, new BFSFrontier());
             if (plan == null)
@@ -51,7 +52,7 @@ namespace MultiAgent
                 return SearchClient.ParseLevel(new LevelReader(LevelReader.Type.Console));
             }
 
-            var filePath = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName + "/levels/" + levelName;
+            var filePath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName + "/levels/" + levelName;
 
             return SearchClient.ParseLevel(new LevelReader(LevelReader.Type.File, File.ReadAllLines(filePath)));
         }

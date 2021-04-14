@@ -12,11 +12,12 @@ namespace MultiAgent.searchClient
         bool Contains(State state);
         string GetName();
     }
+
     public class BFSFrontier : IFrontier
     {
-        public readonly Queue<State> Queue = new Queue<State>();
-        public readonly HashSet<State> Set = new HashSet<State>();
-        
+        public readonly Queue<State> Queue = new();
+        public readonly HashSet<State> Set = new();
+
         public void Add(State state)
         {
             Queue.Enqueue(state);

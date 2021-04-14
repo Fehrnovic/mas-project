@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MultiAgent.searchClient
 {
@@ -14,16 +10,6 @@ namespace MultiAgent.searchClient
         {
             Row = row;
             Col = col;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is Position position)
-            {
-                return this.Row == position.Row && this.Col == position.Col;
-            }
-
-            return false;
         }
 
         public override int GetHashCode()

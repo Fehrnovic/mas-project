@@ -6,7 +6,7 @@ namespace MultiAgent.searchClient
 {
     public class GraphSearch
     {
-        public static Stopwatch timer = new Stopwatch();
+        private static Stopwatch timer = new();
 
         public static Action[][] Search(State initialState, IFrontier frontier)
         {
@@ -69,9 +69,9 @@ namespace MultiAgent.searchClient
 
         private static void PrintSearchStatus(HashSet<State> exploredStates, IFrontier frontier)
         {
-            double elapsedTime = (timer.ElapsedMilliseconds) / 1000;
+            var elapsedTime = (timer.ElapsedMilliseconds) / 1000.0;
             Console.Error.WriteLine(
-                $"#Expanded {exploredStates.Count}, #Frontier: {frontier.Size()}, #Generated: {exploredStates.Count + frontier.Size()}, Time: {elapsedTime} \n");
+                $"#Expanded {exploredStates.Count}, #Frontier: {frontier.Size()}, #Generated: {exploredStates.Count + frontier.Size()}, Time: {elapsedTime}");
         }
     }
 }

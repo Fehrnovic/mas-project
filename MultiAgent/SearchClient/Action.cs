@@ -1,10 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MultiAgent.searchClient
 {
@@ -16,7 +11,8 @@ namespace MultiAgent.searchClient
         public readonly int AgentColDelta;
         public readonly int BoxRowDelta;
         public readonly int BoxColDelta;
-        public static List<Action> AllActions = new List<Action>()
+
+        public static readonly List<Action> AllActions = new()
         {
             //NoOp
             new Action("NoOp", ActionType.NoOp, 0, 0, 0, 0),
