@@ -447,3 +447,10 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,rider,dotnetcore
+.idea/.idea.MultiAgent/.idea/riderModule.iml
+
+.idea/.idea.MultiAgent/.idea/indexLayout.xml
+
+.idea/.idea.MultiAgent/.idea/misc.xml
+
+.idea/.idea.MultiAgent/.idea/modules.xml
