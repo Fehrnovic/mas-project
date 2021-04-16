@@ -113,6 +113,7 @@ namespace MultiAgent.searchClient
             State.AgentGoals = agentGoals;
             State.BoxGoals = boxGoals;
             State.Walls = walls;
+            State.Boxes = boxes;
 
             return new State(agents, boxes);
         }
