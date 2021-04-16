@@ -8,9 +8,9 @@ namespace MultiAgent.searchClient
         public readonly string Name;
         public readonly ActionType Type;
         public readonly int AgentRowDelta;
-        public readonly int AgentColDelta;
+        public readonly int AgentColumnDelta;
         public readonly int BoxRowDelta;
-        public readonly int BoxColDelta;
+        public readonly int BoxColumnDelta;
 
         public static readonly List<Action> AllActions = new()
         {
@@ -58,14 +58,14 @@ namespace MultiAgent.searchClient
             new Action("Pull(W,S)", ActionType.Pull, 0, -1, 1, 0),
         };
 
-        public Action(string name, ActionType type, int agentRowDelta, int agentColDelta, int boxRowDelta, int boxColDelta)
+        public Action(string name, ActionType type, int agentRowDelta, int agentColumnDelta, int boxRowDelta, int boxColumnDelta)
         {
             Name = name;
             Type = type;
             AgentRowDelta = agentRowDelta;
-            AgentColDelta = agentColDelta;
+            AgentColumnDelta = agentColumnDelta;
             BoxRowDelta = boxRowDelta;
-            BoxColDelta = boxColDelta;
+            BoxColumnDelta = boxColumnDelta;
         }
     }
 

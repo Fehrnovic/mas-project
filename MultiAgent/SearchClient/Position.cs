@@ -4,25 +4,26 @@ namespace MultiAgent.searchClient
 {
     public class Position
     {
-        public int Row, Col;
+        public int Row;
+        public int Column;
 
-        public Position(int row, int col)
+        public Position(int row, int column)
         {
             Row = row;
-            Col = col;
+            Column = column;
         }
 
         public Position(Position position)
         {
             Row = position.Row;
-            Col = position.Col;
+            Column = position.Column;
         }
 
         public override bool Equals(object obj)
         {
             if (obj is Position position)
             {
-                return this.Row == position.Row && this.Col == position.Col;
+                return Row == position.Row && Column == position.Column;
             }
 
             return false;
@@ -30,12 +31,12 @@ namespace MultiAgent.searchClient
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Row, Col);
+            return HashCode.Combine(Row, Column);
         }
 
         public override string ToString()
         {
-            return $"Row: {Row}, Col: {Col}";
+            return $"Row: {Row}, Column: {Column}";
         }
     }
 }

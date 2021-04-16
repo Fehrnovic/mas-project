@@ -10,18 +10,20 @@ namespace MultiAgent.searchClient
         {
             // We can assume that the level file is conforming to specification, since the server verifies this.
             // Read domain
-            levelReader.ReadLine(); // #domain // Console.ReadLine(); // #domain
-            levelReader.ReadLine(); // hospital // Console.ReadLine(); // hospital
+            levelReader.ReadLine(); // #domain
+            levelReader.ReadLine(); // hospital
 
             // Read Level name
-            levelReader.ReadLine(); // #levelname // Console.ReadLine(); // #levelname
-            levelReader.ReadLine(); // <name> // Console.ReadLine(); // <name>
+            levelReader.ReadLine(); // #levelname
+            levelReader.ReadLine(); // <name>
 
             // Read colors
-            levelReader.ReadLine(); // #colors // Console.ReadLine(); // #colors
+            levelReader.ReadLine(); // #colors
             var agents = new List<Agent>();
-            var boxes = new List<Box>();
-            var line = levelReader.ReadLine(); // Console.ReadLine();
+
+            var boxColors = new Dictionary<char, Color>();
+            // var boxes = new List<Box>();
+            var line = levelReader.ReadLine();
             while (!line.StartsWith("#"))
             {
                 var split = line.Split(":");
@@ -36,11 +38,11 @@ namespace MultiAgent.searchClient
                     }
                     else if ('A' <= c && c <= 'Z')
                     {
-                        boxes.Add(new Box(c, color));
+                        boxColors.Add(c, color);
                     }
                 }
 
-                line = levelReader.ReadLine(); // Console.ReadLine();
+                line = levelReader.ReadLine();
             }
 
             // Read initial state
@@ -48,35 +50,36 @@ namespace MultiAgent.searchClient
             var numRows = 0;
             var numCols = 0;
             var levelLines = new List<string>();
-            line = levelReader.ReadLine(); // Console.ReadLine();
+            line = levelReader.ReadLine();
             while (!line.StartsWith("#"))
             {
                 levelLines.Add(line);
                 numCols = Math.Max(numCols, line.Length);
                 ++numRows;
-                line = levelReader.ReadLine(); // Console.ReadLine();
+                line = levelReader.ReadLine();
             }
 
             int row;
+            var boxes = new List<Box>();
             var walls = new bool[numRows, numCols];
             for (row = 0; row < numRows; ++row)
             {
                 line = levelLines[row];
-                for (var col = 0; col < line.Length; ++col)
+                for (var column = 0; column < line.Length; ++column)
                 {
-                    var c = line[col];
+                    var c = line[column];
 
                     if ('0' <= c && c <= '9')
                     {
-                        agents.First(a => a.Number == c - '0').Position = new Position(row, col);
+                        agents.First(a => a.Number == c - '0').Position = new Position(row, column);
                     }
                     else if ('A' <= c && c <= 'Z')
                     {
-                        boxes.First(b => b.Letter == c).Position = new Position(row, col);
+                        boxes.Add(new Box(c, boxColors[c], new Position(row, column)));
                     }
                     else if (c == '+')
                     {
-                        walls[row, col] = true;
+                        walls[row, column] = true;
                     }
                 }
             }
@@ -89,18 +92,17 @@ namespace MultiAgent.searchClient
             row = 0;
             while (!line.StartsWith("#"))
             {
-                for (var col = 0; col < line.Length; ++col)
+                for (var column = 0; column < line.Length; ++column)
                 {
-                    var c = line[col];
+                    var c = line[column];
 
                     if (('0' <= c && c <= '9'))
                     {
-                        agentGoals.Add(new Agent(c - '0', new Position(row, col)));
+                        agentGoals.Add(new Agent(c - '0', new Position(row, column)));
                     }
                     else if ('A' <= c && c <= 'Z')
                     {
-                        var color = boxes.First(b => b.Letter == c).Color;
-                        boxGoals.Add(new Box(c, color, new Position(row, col)));
+                        boxGoals.Add(new Box(c, boxColors[c], new Position(row, column)));
                     }
                 }
 

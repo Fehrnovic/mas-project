@@ -4,9 +4,9 @@ namespace MultiAgent.searchClient
 {
     public static class ColorExtension
     {
-        public static Color FromString(String s)
+        public static Color FromString(string s)
         {
-            return (s.ToLower()) switch
+            return s.ToLower() switch
             {
                 "blue" => Color.Blue,
                 "red" => Color.Red,
