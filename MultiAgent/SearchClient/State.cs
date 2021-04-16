@@ -407,14 +407,25 @@ namespace MultiAgent.searchClient
 
         public override int GetHashCode()
         {
-            if (Hash == 0)
+            if (Hash != 0)
             {
-                var hashCode = new HashCode();
-                Agents.ForEach(a => hashCode.Add(a));
-                Boxes.ForEach(a => hashCode.Add(a));
-
-                Hash = hashCode.ToHashCode();
+                return Hash;
             }
+
+            var prime = 31;
+            var result = 1;
+
+            foreach (var agent in Agents)
+            {
+                result = prime * result + (((agent.Position.Row + 1) * 21) * Agents.Count + (agent.Position.Column + 1) * 32) * (agent.Number + 1);
+            }
+
+            foreach (var box in Boxes)
+            {
+                result = prime * result + (((box.Position.Row + 1) * 41) * Walls.GetLength(0) + (box.Position.Column + 1) * 62) * box.Letter;
+            }
+
+            Hash = result;
 
             return Hash;
         }
