@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -290,7 +290,7 @@ namespace MultiAgent.searchClient
                     continue;
                 }
 
-                for (int agent2 = agent1 + 1; agent2 < Agents.Count; ++agent2)
+                for (var agent2 = agent1 + 1; agent2 < Agents.Count; ++agent2)
                 {
                     if (jointActions[agent2].Type == ActionType.NoOp)
                     {
