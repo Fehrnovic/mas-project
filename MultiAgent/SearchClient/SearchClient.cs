@@ -99,7 +99,7 @@ namespace MultiAgent.searchClient
 
                     if (('0' <= c && c <= '9'))
                     {
-                        agentGoals.Add(new Agent(c - '0', new Position(row, column)));
+                        agentGoals.Add(new Agent(c - '0', agentColors[c - '0'], new Position(row, column)));
                     }
                     else if ('A' <= c && c <= 'Z')
                     {

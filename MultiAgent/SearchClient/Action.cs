@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace MultiAgent.searchClient
 {
-    public class Action
+    public readonly struct Action
     {
         public readonly string Name;
         public readonly ActionType Type;

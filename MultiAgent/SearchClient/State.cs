@@ -15,10 +15,10 @@ namespace MultiAgent.searchClient
 
         // State information
         public Action[] JointActions;
-        public Dictionary<Position, Box> PositionsOfBoxes = new(Boxes.Count + 1);
+        public readonly Dictionary<Position, Box> PositionsOfBoxes;
         // Both a reference from Agent -> Position and Position -> Agent is kept to allow for quick lookup
-        public Dictionary<Position, Agent> PositionsOfAgents = new(Agents.Count + 1);
-        public Dictionary<Agent, Position> AgentPositions = new(Agents.Count + 1);
+        public readonly Dictionary<Position, Agent> PositionsOfAgents;
+        public readonly Position[] AgentPositions;
 
         public State Parent;
         public int Depth;
@@ -27,10 +27,14 @@ namespace MultiAgent.searchClient
 
         public State(List<Agent> agents, List<Box> boxes)
         {
+            PositionsOfBoxes = new Dictionary<Position, Box>(Boxes.Count);
+            PositionsOfAgents = new Dictionary<Position, Agent>(Agents.Count);
+            AgentPositions = new Position[Agents.Count];
+
             foreach (var agent in agents)
             {
                 PositionsOfAgents.Add(agent.GetInitialLocation(), agent);
-                AgentPositions.Add(agent, agent.GetInitialLocation());
+                AgentPositions[agent.Number] = agent.GetInitialLocation();
             }
 
             foreach (var box in boxes)
@@ -41,11 +45,31 @@ namespace MultiAgent.searchClient
 
         public State(State parent, Action[] jointActions)
         {
+            PositionsOfBoxes = new Dictionary<Position, Box>(Boxes.Count);
+            PositionsOfAgents = new Dictionary<Position, Agent>(Agents.Count);
+            AgentPositions = new Position[Agents.Count];
+
             // Copy parent information
-            foreach (var (agentPosition, agent) in parent.AgentPositions)
+            CopyParentInformation(parent);
+
+            // Copy joint actions
+            CopyJointActions(jointActions);
+
+            // Apply actions
+            ApplyActions();
+        }
+
+        private void CopyJointActions(Action[] jointActions)
+        {
+            JointActions = jointActions;
+        }
+
+        private void CopyParentInformation(State parent)
+        {
+            foreach (var (agentPosition, agent) in parent.PositionsOfAgents)
             {
-                AgentPositions.Add(agentPosition, agent);
-                PositionsOfAgents.Add(agent, agentPosition);
+                PositionsOfAgents.Add(agentPosition, agent);
+                AgentPositions[agent.Number] = agentPosition;
             }
 
             foreach (var (boxPosition, box) in parent.PositionsOfBoxes)
@@ -54,14 +78,14 @@ namespace MultiAgent.searchClient
             }
 
             Parent = parent;
-            JointActions = new Action[Agents.Count];
-            Array.Copy(jointActions, JointActions, jointActions.Length);
             Depth = parent.Depth + 1;
+        }
 
-            // Apply actions
+        private void ApplyActions()
+        {
             foreach (var agent in Agents)
             {
-                var agentAction = jointActions[agent.Number];
+                var agentAction = JointActions[agent.Number];
 
                 Position agentPosition;
                 Box box;
@@ -75,7 +99,6 @@ namespace MultiAgent.searchClient
 
                         // Remove old position:
                         PositionsOfAgents.Remove(agentPosition);
-                        AgentPositions.Remove(agent);
 
                         // Move agent:
                         agentPosition = new Position(
@@ -83,7 +106,7 @@ namespace MultiAgent.searchClient
                             agentPosition.Column + agentAction.AgentColumnDelta
                         );
                         PositionsOfAgents.Add(agentPosition, agent);
-                        AgentPositions.Add(agent, agentPosition);
+                        AgentPositions[agent.Number] = agentPosition;
 
                         break;
                     case ActionType.Push:
@@ -91,7 +114,6 @@ namespace MultiAgent.searchClient
 
                         // Remove old position:
                         PositionsOfAgents.Remove(agentPosition);
-                        AgentPositions.Remove(agent);
 
                         // Move agent:
                         agentPosition = new Position(
@@ -99,7 +121,7 @@ namespace MultiAgent.searchClient
                             agentPosition.Column + agentAction.AgentColumnDelta
                         );
                         PositionsOfAgents.Add(agentPosition, agent);
-                        AgentPositions.Add(agent, agentPosition);
+                        AgentPositions[agent.Number] = agentPosition;
 
 
                         // Get the box character
@@ -130,7 +152,6 @@ namespace MultiAgent.searchClient
                         // Move agent
                         // Remove old position:
                         PositionsOfAgents.Remove(agentPosition);
-                        AgentPositions.Remove(agent);
 
                         // Move agent:
                         agentPosition = new Position(
@@ -138,7 +159,7 @@ namespace MultiAgent.searchClient
                             agentPosition.Column + agentAction.AgentColumnDelta
                         );
                         PositionsOfAgents.Add(agentPosition, agent);
-                        AgentPositions.Add(agent, agentPosition);
+                        AgentPositions[agent.Number] = agentPosition;
 
                         // Update box position
                         // Remove old location:
@@ -178,19 +199,19 @@ namespace MultiAgent.searchClient
             }
 
             // Iterate over joint actions, check conflict and generate child states.
-            var jointAction = new Action[Agents.Count];
             var actionsPermutation = new int[Agents.Count];
             var expandedStates = new List<State>(32);
             while (true)
             {
+                var jointActions = new Action[Agents.Count];
                 foreach (var agent in Agents)
                 {
-                    jointAction[agent.Number] = applicableActions[agent][actionsPermutation[agent.Number]];
+                    jointActions[agent.Number] = applicableActions[agent][actionsPermutation[agent.Number]];
                 }
 
-                if (!IsConflicting(jointAction))
+                if (!IsConflicting(jointActions))
                 {
-                    expandedStates.Add(new State(this, jointAction));
+                    expandedStates.Add(new State(this, jointActions));
                 }
 
                 // Advance permutation
@@ -412,9 +433,7 @@ namespace MultiAgent.searchClient
 
         private Position PositionOfAgent(Agent agent)
         {
-            AgentPositions.TryGetValue(agent, out var box);
-
-            return box;
+            return AgentPositions[agent.Number];
         }
 
         private Box BoxAt(Position position)
@@ -506,7 +525,7 @@ namespace MultiAgent.searchClient
                 return false;
             }
 
-            foreach (var (agent, agentPosition) in AgentPositions)
+            foreach (var (agentPosition, agent) in PositionsOfAgents)
             {
                 if (!state.PositionsOfAgents.TryGetValue(agentPosition, out var agent2))
                 {

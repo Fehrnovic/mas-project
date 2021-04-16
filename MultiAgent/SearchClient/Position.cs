@@ -2,7 +2,7 @@
 
 namespace MultiAgent.searchClient
 {
-    public struct Position : IEquatable<Position>
+    public readonly struct Position : IEquatable<Position>
     {
         public readonly int Row;
         public readonly int Column;
@@ -11,12 +11,6 @@ namespace MultiAgent.searchClient
         {
             Row = row;
             Column = column;
-        }
-
-        public Position(Position position)
-        {
-            Row = position.Row;
-            Column = position.Column;
         }
 
         public override string ToString()
