@@ -2,7 +2,7 @@
 
 namespace MultiAgent.searchClient
 {
-    public class Position
+    public struct Position : IEquatable<Position>
     {
         public int Row;
         public int Column;
@@ -19,14 +19,19 @@ namespace MultiAgent.searchClient
             Column = position.Column;
         }
 
+        public override string ToString()
+        {
+            return $"Row: {Row}, Column: {Column}";
+        }
+
+        public bool Equals(Position other)
+        {
+            return Row == other.Row && Column == other.Column;
+        }
+
         public override bool Equals(object obj)
         {
-            if (obj is Position position)
-            {
-                return Row == position.Row && Column == position.Column;
-            }
-
-            return false;
+            return obj is Position position && Equals(position);
         }
 
         public override int GetHashCode()
@@ -34,9 +39,14 @@ namespace MultiAgent.searchClient
             return HashCode.Combine(Row, Column);
         }
 
-        public override string ToString()
+        public static bool operator ==(Position left, Position right)
         {
-            return $"Row: {Row}, Column: {Column}";
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Position left, Position right)
+        {
+            return !(left == right);
         }
     }
 }
