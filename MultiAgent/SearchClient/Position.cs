@@ -4,8 +4,8 @@ namespace MultiAgent.searchClient
 {
     public struct Position : IEquatable<Position>
     {
-        public int Row;
-        public int Column;
+        public readonly int Row;
+        public readonly int Column;
 
         public Position(int row, int column)
         {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace MultiAgent.searchClient
@@ -10,13 +9,16 @@ namespace MultiAgent.searchClient
         // Static properties
         public static List<Agent> AgentGoals;
         public static List<Box> BoxGoals;
+        public static List<Agent> Agents;
         public static List<Box> Boxes;
         public static bool[,] Walls;
 
         // State information
-        public readonly List<Agent> Agents;
         public Action[] JointActions;
-        public Dictionary<Position, Box> BoxPositions = new(Boxes.Count + 1);
+        public Dictionary<Position, Box> PositionsOfBoxes = new(Boxes.Count + 1);
+        // Both a reference from Agent -> Position and Position -> Agent is kept to allow for quick lookup
+        public Dictionary<Position, Agent> PositionsOfAgents = new(Agents.Count + 1);
+        public Dictionary<Agent, Position> AgentPositions = new(Agents.Count + 1);
 
         public State Parent;
         public int Depth;
@@ -25,26 +27,35 @@ namespace MultiAgent.searchClient
 
         public State(List<Agent> agents, List<Box> boxes)
         {
-            Agents = agents;
+            foreach (var agent in agents)
+            {
+                PositionsOfAgents.Add(agent.GetInitialLocation(), agent);
+                AgentPositions.Add(agent, agent.GetInitialLocation());
+            }
+
             foreach (var box in boxes)
             {
-                BoxPositions.Add(box.Position, box);
+                PositionsOfBoxes.Add(box.GetInitialLocation(), box);
             }
         }
 
         public State(State parent, Action[] jointActions)
         {
             // Copy parent information
-            Agents = parent.Agents.Select(a => new Agent(a.Number, a.Color, new Position(a.Position.Row, a.Position.Column))).ToList();
-            foreach (var (boxPosition, box) in parent.BoxPositions)
+            foreach (var (agentPosition, agent) in parent.AgentPositions)
             {
-                BoxPositions.Add(boxPosition, box);
+                AgentPositions.Add(agentPosition, agent);
+                PositionsOfAgents.Add(agent, agentPosition);
+            }
+
+            foreach (var (boxPosition, box) in parent.PositionsOfBoxes)
+            {
+                PositionsOfBoxes.Add(boxPosition, box);
             }
 
             Parent = parent;
-            JointActions = jointActions.Select(
-                a => new Action(a.Name, a.Type, a.AgentRowDelta, a.AgentColumnDelta, a.BoxRowDelta, a.BoxColumnDelta)
-            ).ToArray();
+            JointActions = new Action[Agents.Count];
+            Array.Copy(jointActions, JointActions, jointActions.Length);
             Depth = parent.Depth + 1;
 
             // Apply actions
@@ -52,6 +63,7 @@ namespace MultiAgent.searchClient
             {
                 var agentAction = jointActions[agent.Number];
 
+                Position agentPosition;
                 Box box;
 
                 switch (agentAction.Type)
@@ -59,46 +71,80 @@ namespace MultiAgent.searchClient
                     case ActionType.NoOp:
                         break;
                     case ActionType.Move:
-                        agent.Position.Row += agentAction.AgentRowDelta;
-                        agent.Position.Column += agentAction.AgentColumnDelta;
+                        agentPosition = PositionOfAgent(agent);
+
+                        // Remove old position:
+                        PositionsOfAgents.Remove(agentPosition);
+                        AgentPositions.Remove(agent);
+
+                        // Move agent:
+                        agentPosition = new Position(
+                            agentPosition.Row + agentAction.AgentRowDelta,
+                            agentPosition.Column + agentAction.AgentColumnDelta
+                        );
+                        PositionsOfAgents.Add(agentPosition, agent);
+                        AgentPositions.Add(agent, agentPosition);
 
                         break;
                     case ActionType.Push:
-                        agent.Position.Row += agentAction.AgentRowDelta;
-                        agent.Position.Column += agentAction.AgentColumnDelta;
+                        agentPosition = PositionOfAgent(agent);
+
+                        // Remove old position:
+                        PositionsOfAgents.Remove(agentPosition);
+                        AgentPositions.Remove(agent);
+
+                        // Move agent:
+                        agentPosition = new Position(
+                            agentPosition.Row + agentAction.AgentRowDelta,
+                            agentPosition.Column + agentAction.AgentColumnDelta
+                        );
+                        PositionsOfAgents.Add(agentPosition, agent);
+                        AgentPositions.Add(agent, agentPosition);
+
 
                         // Get the box character
-                        box = BoxAt(agent.Position);
+                        box = BoxAt(agentPosition);
                         // Remove previous location:
-                        BoxPositions.Remove(agent.Position);
+                        PositionsOfBoxes.Remove(agentPosition);
                         // Set the new location:
-                        BoxPositions.Add(
+                        PositionsOfBoxes.Add(
                             new Position(
-                                agent.Position.Row + agentAction.BoxRowDelta,
-                                agent.Position.Column + agentAction.BoxColumnDelta
+                                agentPosition.Row + agentAction.BoxRowDelta,
+                                agentPosition.Column + agentAction.BoxColumnDelta
                             ),
                             box
                         );
 
                         break;
                     case ActionType.Pull:
+                        agentPosition = PositionOfAgent(agent);
+
                         // Find box before pull
                         var oldBoxPosition = new Position(
-                            agent.Position.Row - agentAction.BoxRowDelta,
-                            agent.Position.Column - agentAction.BoxColumnDelta
+                            agentPosition.Row - agentAction.BoxRowDelta,
+                            agentPosition.Column - agentAction.BoxColumnDelta
                         );
 
                         box = BoxAt(oldBoxPosition);
 
                         // Move agent
-                        agent.Position.Row += agentAction.AgentRowDelta;
-                        agent.Position.Column += agentAction.AgentColumnDelta;
+                        // Remove old position:
+                        PositionsOfAgents.Remove(agentPosition);
+                        AgentPositions.Remove(agent);
+
+                        // Move agent:
+                        agentPosition = new Position(
+                            agentPosition.Row + agentAction.AgentRowDelta,
+                            agentPosition.Column + agentAction.AgentColumnDelta
+                        );
+                        PositionsOfAgents.Add(agentPosition, agent);
+                        AgentPositions.Add(agent, agentPosition);
 
                         // Update box position
                         // Remove old location:
-                        BoxPositions.Remove(oldBoxPosition);
+                        PositionsOfBoxes.Remove(oldBoxPosition);
                         // Set new location:
-                        BoxPositions.Add(
+                        PositionsOfBoxes.Add(
                             new Position(
                                 oldBoxPosition.Row + agentAction.BoxRowDelta,
                                 oldBoxPosition.Column + agentAction.BoxColumnDelta
@@ -183,6 +229,7 @@ namespace MultiAgent.searchClient
             Box box;
             int destinationRow;
             int destinationColumn;
+            Position agentPosition;
 
             switch (action.Type)
             {
@@ -190,15 +237,19 @@ namespace MultiAgent.searchClient
                     return true;
 
                 case ActionType.Move:
-                    destinationRow = agent.Position.Row + action.AgentRowDelta;
-                    destinationColumn = agent.Position.Column + action.AgentColumnDelta;
+                    agentPosition = PositionOfAgent(agent);
+
+                    destinationRow = agentPosition.Row + action.AgentRowDelta;
+                    destinationColumn = agentPosition.Column + action.AgentColumnDelta;
 
                     return CellIsFree(new Position(destinationRow, destinationColumn));
 
                 case ActionType.Push:
+                    agentPosition = PositionOfAgent(agent);
+
                     // Calculate the possible location of the box to be moved
-                    boxRow = agent.Position.Row + action.AgentRowDelta;
-                    boxColumn = agent.Position.Column + action.AgentColumnDelta;
+                    boxRow = agentPosition.Row + action.AgentRowDelta;
+                    boxColumn = agentPosition.Column + action.AgentColumnDelta;
 
                     // Get the box character
                     box = BoxAt(new Position(boxRow, boxColumn));
@@ -223,13 +274,15 @@ namespace MultiAgent.searchClient
                     return CellIsFree(new Position(destinationRow, destinationColumn));
 
                 case ActionType.Pull:
+                    agentPosition = PositionOfAgent(agent);
+
                     // Calculate the destination of the agent
-                    destinationRow = agent.Position.Row + action.AgentRowDelta;
-                    destinationColumn = agent.Position.Column + action.AgentColumnDelta;
+                    destinationRow = agentPosition.Row + action.AgentRowDelta;
+                    destinationColumn = agentPosition.Column + action.AgentColumnDelta;
 
                     // Calculate the possible location of the box to be moved
-                    boxRow = agent.Position.Row - action.BoxRowDelta;
-                    boxColumn = agent.Position.Column - action.BoxColumnDelta;
+                    boxRow = agentPosition.Row - action.BoxRowDelta;
+                    boxColumn = agentPosition.Column - action.BoxColumnDelta;
 
                     // Get the box character
                     box = BoxAt(new Position(boxRow, boxColumn));
@@ -266,6 +319,7 @@ namespace MultiAgent.searchClient
                 var action = jointActions[agent.Number];
                 int boxRow;
                 int boxColumn;
+                Position agentPosition;
 
                 switch (action.Type)
                 {
@@ -274,19 +328,23 @@ namespace MultiAgent.searchClient
 
                     // Move and pull behave similarly with conflicts, since with a pull, only the agent moves to a square that must be free
                     case ActionType.Move:
+                        agentPosition = PositionOfAgent(agent);
+
                         // Calculate destination of agent
-                        destinationRows[agent.Number] = agent.Position.Row + action.AgentRowDelta;
-                        destinationColumns[agent.Number] = agent.Position.Column + action.AgentColumnDelta;
+                        destinationRows[agent.Number] = agentPosition.Row + action.AgentRowDelta;
+                        destinationColumns[agent.Number] = agentPosition.Column + action.AgentColumnDelta;
 
                         break;
 
                     case ActionType.Pull:
-                        // Calculate destination of agent
-                        destinationRows[agent.Number] = agent.Position.Row + action.AgentRowDelta;
-                        destinationColumns[agent.Number] = agent.Position.Column + action.AgentColumnDelta;
+                        agentPosition = PositionOfAgent(agent);
 
-                        boxRow = agent.Position.Row - action.BoxRowDelta;
-                        boxColumn = agent.Position.Column - action.BoxColumnDelta;
+                        // Calculate destination of agent
+                        destinationRows[agent.Number] = agentPosition.Row + action.AgentRowDelta;
+                        destinationColumns[agent.Number] = agentPosition.Column + action.AgentColumnDelta;
+
+                        boxRow = agentPosition.Row - action.BoxRowDelta;
+                        boxColumn = agentPosition.Column - action.BoxColumnDelta;
 
                         boxRows[agent.Number] = boxRow;
                         boxColumns[agent.Number] = boxColumn;
@@ -294,9 +352,11 @@ namespace MultiAgent.searchClient
                         break;
 
                     case ActionType.Push:
+                        agentPosition = PositionOfAgent(agent);
+
                         // Get current location of box
-                        boxRow = agent.Position.Row + action.AgentRowDelta;
-                        boxColumn = agent.Position.Column + action.AgentColumnDelta;
+                        boxRow = agentPosition.Row + action.AgentRowDelta;
+                        boxColumn = agentPosition.Column + action.AgentColumnDelta;
 
                         // Calculate destination of box
                         destinationRows[agent.Number] = boxRow + action.BoxRowDelta;
@@ -347,24 +407,39 @@ namespace MultiAgent.searchClient
 
         private Agent AgentAt(Position position)
         {
-            return Agents.FirstOrDefault(a => a.Position.Equals(position));
+            return PositionsOfAgents.TryGetValue(position, out var agent) ? agent : null;
+        }
+
+        private Position PositionOfAgent(Agent agent)
+        {
+            AgentPositions.TryGetValue(agent, out var box);
+
+            return box;
         }
 
         private Box BoxAt(Position position)
         {
-            return BoxPositions.TryGetValue(position, out var box) ? box : null;
+            return PositionsOfBoxes.TryGetValue(position, out var box) ? box : null;
         }
 
         public bool IsGoalState()
         {
-            var agentsMatch = !AgentGoals.Any() ||
-                              AgentGoals.All(agentGoal =>
-                                  Agents.Exists(agent =>
-                                      agentGoal.Number == agent.Number && agentGoal.Position.Equals(agent.Position)));
+            foreach (var agentGoal in AgentGoals)
+            {
+                if (!PositionsOfAgents.TryGetValue(agentGoal.GetInitialLocation(), out var agent))
+                {
+                    return false;
+                }
+
+                if (agentGoal.Number != agent.Number)
+                {
+                    return false;
+                }
+            }
 
             foreach (var boxGoal in BoxGoals)
             {
-                if (!BoxPositions.TryGetValue(boxGoal.Position, out var box))
+                if (!PositionsOfBoxes.TryGetValue(boxGoal.GetInitialLocation(), out var box))
                 {
                     return false;
                 }
@@ -375,7 +450,7 @@ namespace MultiAgent.searchClient
                 }
             }
 
-            return agentsMatch;
+            return true;
         }
 
         public Action[][] ExtractPlan()
@@ -431,23 +506,22 @@ namespace MultiAgent.searchClient
                 return false;
             }
 
-            foreach (var agent in Agents)
+            foreach (var (agent, agentPosition) in AgentPositions)
             {
-                var agent2 = state.Agents.FirstOrDefault(a => a.Position.Equals(agent.Position));
-                if (agent2 == null)
+                if (!state.PositionsOfAgents.TryGetValue(agentPosition, out var agent2))
                 {
                     return false;
                 }
 
-                if (agent.Number != agent2.Number)
+                if (agent != agent2)
                 {
                     return false;
                 }
             }
 
-            foreach (var (boxPosition, box) in BoxPositions)
+            foreach (var (boxPosition, box) in PositionsOfBoxes)
             {
-                if (!state.BoxPositions.TryGetValue(boxPosition, out var box2))
+                if (!state.PositionsOfBoxes.TryGetValue(boxPosition, out var box2))
                 {
                     return false;
                 }
@@ -471,12 +545,12 @@ namespace MultiAgent.searchClient
             var prime = 31;
             var result = 1;
 
-            foreach (var agent in Agents)
+            foreach (var (agentPosition, agent) in PositionsOfAgents)
             {
-                result = prime * result + (((agent.Position.Row + 1) * 21) * Agents.Count + (agent.Position.Column + 1) * 32) * (agent.Number + 1);
+                result = prime * result + (((agentPosition.Row + 1) * 21) * Agents.Count + (agentPosition.Column + 1) * 32) * (agent.Number + 1);
             }
 
-            foreach (var (boxPosition, box) in BoxPositions)
+            foreach (var (boxPosition, box) in PositionsOfBoxes)
             {
                 result = prime * result + (((boxPosition.Row + 1) * 41) * Walls.GetLength(0) + (boxPosition.Column + 1) * 62) * box.Letter;
             }

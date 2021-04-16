@@ -19,8 +19,8 @@ namespace MultiAgent.searchClient
 
             // Read colors
             levelReader.ReadLine(); // #colors
-            var agents = new List<Agent>();
 
+            var agentColors = new Dictionary<int, Color>();
             var boxColors = new Dictionary<char, Color>();
             // var boxes = new List<Box>();
             var line = levelReader.ReadLine();
@@ -34,7 +34,7 @@ namespace MultiAgent.searchClient
                     var c = entity.Trim()[0];
                     if ('0' <= c && c <= '9')
                     {
-                        agents.Add(new Agent(c - '0', color));
+                        agentColors.Add(c - '0', color);
                     }
                     else if ('A' <= c && c <= 'Z')
                     {
@@ -60,6 +60,7 @@ namespace MultiAgent.searchClient
             }
 
             int row;
+            var agents = new List<Agent>();
             var boxes = new List<Box>();
             var walls = new bool[numRows, numCols];
             for (row = 0; row < numRows; ++row)
@@ -71,7 +72,7 @@ namespace MultiAgent.searchClient
 
                     if ('0' <= c && c <= '9')
                     {
-                        agents.First(a => a.Number == c - '0').Position = new Position(row, column);
+                        agents.Add(new Agent(c - '0', agentColors[c - '0'], new Position(row, column)));
                     }
                     else if ('A' <= c && c <= 'Z')
                     {
@@ -114,6 +115,7 @@ namespace MultiAgent.searchClient
             State.BoxGoals = boxGoals;
             State.Walls = walls;
             State.Boxes = boxes;
+            State.Agents = agents;
 
             return new State(agents, boxes);
         }
