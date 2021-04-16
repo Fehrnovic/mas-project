@@ -396,13 +396,35 @@ namespace MultiAgent.searchClient
                 return false;
             }
 
-            // This should never occur but is kept for safety
-            // if (Boxes.Count != state.Boxes.Count || Agents.Count != state.Agents.Count)
-            // {
-            //     return false;
-            // }
+            foreach (var agent in Agents)
+            {
+                var agent2 = state.Agents.FirstOrDefault(a => a.Position.Equals(agent.Position));
+                if (agent2 == null)
+                {
+                    return false;
+                }
 
-            return !Boxes.Except(state.Boxes).Any() && !Agents.Except(state.Agents).Any();
+                if (agent.Number != agent2.Number)
+                {
+                    return false;
+                }
+            }
+
+            foreach (var box in Boxes)
+            {
+                var box2 = state.Boxes.FirstOrDefault(b => b.Position.Equals(box.Position));
+                if (box2 == null)
+                {
+                    return false;
+                }
+
+                if (box.Letter != box2.Letter)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public override int GetHashCode()
