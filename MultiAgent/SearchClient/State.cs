@@ -16,6 +16,7 @@ namespace MultiAgent.searchClient
         // State information
         public Action[] JointActions;
         public readonly Dictionary<Position, Box> PositionsOfBoxes;
+
         // Both a reference from Agent -> Position and Position -> Agent is kept to allow for quick lookup
         public readonly Dictionary<Position, Agent> PositionsOfAgents;
         public readonly Position[] AgentPositions;
@@ -66,12 +67,6 @@ namespace MultiAgent.searchClient
 
         private void CopyParentInformation(State parent)
         {
-            foreach (var (agentPosition, agent) in parent.PositionsOfAgents)
-            {
-                PositionsOfAgents.Add(agentPosition, agent);
-                AgentPositions[agent.Number] = agentPosition;
-            }
-
             foreach (var (boxPosition, box) in parent.PositionsOfBoxes)
             {
                 PositionsOfBoxes.Add(boxPosition, box);
@@ -86,20 +81,17 @@ namespace MultiAgent.searchClient
             foreach (var agent in Agents)
             {
                 var agentAction = JointActions[agent.Number];
-
-                Position agentPosition;
+                var agentPosition = Parent.AgentPositions[agent.Number];;
                 Box box;
 
                 switch (agentAction.Type)
                 {
                     case ActionType.NoOp:
+                        PositionsOfAgents.Add(agentPosition, agent);
+                        AgentPositions[agent.Number] = agentPosition;
+
                         break;
                     case ActionType.Move:
-                        agentPosition = PositionOfAgent(agent);
-
-                        // Remove old position:
-                        PositionsOfAgents.Remove(agentPosition);
-
                         // Move agent:
                         agentPosition = new Position(
                             agentPosition.Row + agentAction.AgentRowDelta,
@@ -110,11 +102,6 @@ namespace MultiAgent.searchClient
 
                         break;
                     case ActionType.Push:
-                        agentPosition = PositionOfAgent(agent);
-
-                        // Remove old position:
-                        PositionsOfAgents.Remove(agentPosition);
-
                         // Move agent:
                         agentPosition = new Position(
                             agentPosition.Row + agentAction.AgentRowDelta,
@@ -123,12 +110,11 @@ namespace MultiAgent.searchClient
                         PositionsOfAgents.Add(agentPosition, agent);
                         AgentPositions[agent.Number] = agentPosition;
 
+                        // Get the box character from parent
+                        Parent.PositionsOfBoxes.TryGetValue(agentPosition, out box);
 
-                        // Get the box character
-                        box = BoxAt(agentPosition);
-                        // Remove previous location:
-                        PositionsOfBoxes.Remove(agentPosition);
                         // Set the new location:
+                        PositionsOfBoxes.Remove(agentPosition);
                         PositionsOfBoxes.Add(
                             new Position(
                                 agentPosition.Row + agentAction.BoxRowDelta,
@@ -139,21 +125,16 @@ namespace MultiAgent.searchClient
 
                         break;
                     case ActionType.Pull:
-                        agentPosition = PositionOfAgent(agent);
-
                         // Find box before pull
                         var oldBoxPosition = new Position(
                             agentPosition.Row - agentAction.BoxRowDelta,
                             agentPosition.Column - agentAction.BoxColumnDelta
                         );
 
-                        box = BoxAt(oldBoxPosition);
+                        // Get the box from parent
+                        Parent.PositionsOfBoxes.TryGetValue(oldBoxPosition, out box);
 
                         // Move agent
-                        // Remove old position:
-                        PositionsOfAgents.Remove(agentPosition);
-
-                        // Move agent:
                         agentPosition = new Position(
                             agentPosition.Row + agentAction.AgentRowDelta,
                             agentPosition.Column + agentAction.AgentColumnDelta
