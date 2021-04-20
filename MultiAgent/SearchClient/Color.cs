@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MultiAgent.searchClient
+namespace MultiAgent.SearchClient
 {
     public static class ColorExtension
     {

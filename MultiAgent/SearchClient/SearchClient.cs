@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MultiAgent.searchClient
+namespace MultiAgent.SearchClient
 {
     public static class SearchClient
     {
@@ -111,11 +111,11 @@ namespace MultiAgent.searchClient
                 line = levelReader.ReadLine(); // Console.ReadLine();
             }
 
-            State.AgentGoals = agentGoals;
-            State.BoxGoals = boxGoals;
-            State.Walls = walls;
-            State.Boxes = boxes;
-            State.Agents = agents;
+            Level.AgentGoals = agentGoals;
+            Level.BoxGoals = boxGoals;
+            Level.Walls = walls;
+            Level.Boxes = boxes;
+            Level.Agents = agents;
 
             return new State(agents, boxes);
         }

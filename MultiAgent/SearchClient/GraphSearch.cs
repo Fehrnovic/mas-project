@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace MultiAgent.searchClient
+namespace MultiAgent.SearchClient
 {
     public class GraphSearch
     {

@@ -2,17 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MultiAgent.searchClient
+namespace MultiAgent.SearchClient
 {
     public class State
     {
-        // Static properties
-        public static List<Agent> AgentGoals;
-        public static List<Box> BoxGoals;
-        public static List<Agent> Agents;
-        public static List<Box> Boxes;
-        public static bool[,] Walls;
-
         // State information
         public Action[] JointActions;
         public readonly Dictionary<Position, Box> PositionsOfBoxes;
@@ -28,9 +21,9 @@ namespace MultiAgent.searchClient
 
         public State(List<Agent> agents, List<Box> boxes)
         {
-            PositionsOfBoxes = new Dictionary<Position, Box>(Boxes.Count);
-            PositionsOfAgents = new Dictionary<Position, Agent>(Agents.Count);
-            AgentPositions = new Position[Agents.Count];
+            PositionsOfBoxes = new Dictionary<Position, Box>(Level.Boxes.Count);
+            PositionsOfAgents = new Dictionary<Position, Agent>(Level.Agents.Count);
+            AgentPositions = new Position[Level.Agents.Count];
 
             foreach (var agent in agents)
             {
@@ -46,9 +39,9 @@ namespace MultiAgent.searchClient
 
         public State(State parent, Action[] jointActions)
         {
-            PositionsOfBoxes = new Dictionary<Position, Box>(Boxes.Count);
-            PositionsOfAgents = new Dictionary<Position, Agent>(Agents.Count);
-            AgentPositions = new Position[Agents.Count];
+            PositionsOfBoxes = new Dictionary<Position, Box>(Level.Boxes.Count);
+            PositionsOfAgents = new Dictionary<Position, Agent>(Level.Agents.Count);
+            AgentPositions = new Position[Level.Agents.Count];
 
             // Copy parent information
             CopyParentInformation(parent);
@@ -78,7 +71,7 @@ namespace MultiAgent.searchClient
 
         private void ApplyActions()
         {
-            foreach (var agent in Agents)
+            foreach (var agent in Level.Agents)
             {
                 var agentAction = JointActions[agent.Number];
                 var agentPosition = Parent.AgentPositions[agent.Number];;
@@ -164,8 +157,8 @@ namespace MultiAgent.searchClient
         public List<State> GetExpandedStates()
         {
             // Determine list of applicable actions for each individual agent.
-            var applicableActions = new Dictionary<Agent, List<Action>>(Agents.Count);
-            foreach (var agent in Agents)
+            var applicableActions = new Dictionary<Agent, List<Action>>(Level.Agents.Count);
+            foreach (var agent in Level.Agents)
             {
                 var applicableAgentActions = new List<Action>(Action.AllActions.Count);
                 foreach (var action in Action.AllActions)
@@ -180,12 +173,12 @@ namespace MultiAgent.searchClient
             }
 
             // Iterate over joint actions, check conflict and generate child states.
-            var actionsPermutation = new int[Agents.Count];
+            var actionsPermutation = new int[Level.Agents.Count];
             var expandedStates = new List<State>(32);
             while (true)
             {
-                var jointActions = new Action[Agents.Count];
-                foreach (var agent in Agents)
+                var jointActions = new Action[Level.Agents.Count];
+                foreach (var agent in Level.Agents)
                 {
                     jointActions[agent.Number] = applicableActions[agent][actionsPermutation[agent.Number]];
                 }
@@ -197,7 +190,7 @@ namespace MultiAgent.searchClient
 
                 // Advance permutation
                 var done = false;
-                foreach (var agent in Agents)
+                foreach (var agent in Level.Agents)
                 {
                     if (actionsPermutation[agent.Number] < applicableActions[agent].Count - 1)
                     {
@@ -207,7 +200,7 @@ namespace MultiAgent.searchClient
                     else
                     {
                         actionsPermutation[agent.Number] = 0;
-                        if (agent.Number == Agents.Count - 1)
+                        if (agent.Number == Level.Agents.Count - 1)
                         {
                             done = true;
                         }
@@ -311,12 +304,12 @@ namespace MultiAgent.searchClient
 
         private bool IsConflicting(Action[] jointActions)
         {
-            var destinationRows = new int[Agents.Count]; // row of new cell to become occupied by action
-            var destinationColumns = new int[Agents.Count]; // column of new cell to become occupied by action
-            var boxRows = new int[Agents.Count]; // current row of box moved by action
-            var boxColumns = new int[Agents.Count]; // current column of box moved by action
+            var destinationRows = new int[Level.Agents.Count]; // row of new cell to become occupied by action
+            var destinationColumns = new int[Level.Agents.Count]; // column of new cell to become occupied by action
+            var boxRows = new int[Level.Agents.Count]; // current row of box moved by action
+            var boxColumns = new int[Level.Agents.Count]; // current column of box moved by action
 
-            foreach (var agent in Agents)
+            foreach (var agent in Level.Agents)
             {
                 var action = jointActions[agent.Number];
                 int boxRow;
@@ -370,14 +363,14 @@ namespace MultiAgent.searchClient
                 }
             }
 
-            for (var agent1 = 0; agent1 < Agents.Count; ++agent1)
+            for (var agent1 = 0; agent1 < Level.Agents.Count; ++agent1)
             {
                 if (jointActions[agent1].Type == ActionType.NoOp)
                 {
                     continue;
                 }
 
-                for (var agent2 = agent1 + 1; agent2 < Agents.Count; ++agent2)
+                for (var agent2 = agent1 + 1; agent2 < Level.Agents.Count; ++agent2)
                 {
                     if (jointActions[agent2].Type == ActionType.NoOp)
                     {
@@ -404,7 +397,7 @@ namespace MultiAgent.searchClient
 
         private bool CellIsFree(Position position)
         {
-            return !Walls[position.Row, position.Column] && BoxAt(position) == null && AgentAt(position) == null;
+            return !Level.Walls[position.Row, position.Column] && BoxAt(position) == null && AgentAt(position) == null;
         }
 
         private Agent AgentAt(Position position)
@@ -424,7 +417,7 @@ namespace MultiAgent.searchClient
 
         public bool IsGoalState()
         {
-            foreach (var agentGoal in AgentGoals)
+            foreach (var agentGoal in Level.AgentGoals)
             {
                 if (!PositionsOfAgents.TryGetValue(agentGoal.GetInitialLocation(), out var agent))
                 {
@@ -437,7 +430,7 @@ namespace MultiAgent.searchClient
                 }
             }
 
-            foreach (var boxGoal in BoxGoals)
+            foreach (var boxGoal in Level.BoxGoals)
             {
                 if (!PositionsOfBoxes.TryGetValue(boxGoal.GetInitialLocation(), out var box))
                 {
@@ -469,9 +462,9 @@ namespace MultiAgent.searchClient
         public override string ToString()
         {
             var s = new StringBuilder();
-            for (var row = 0; row < Walls.GetLength(0); row++)
+            for (var row = 0; row < Level.Walls.GetLength(0); row++)
             {
-                for (var column = 0; column < Walls.GetLength(1); column++)
+                for (var column = 0; column < Level.Walls.GetLength(1); column++)
                 {
                     var box = BoxAt(new Position(row, column));
                     var agent = AgentAt(new Position(row, column));
@@ -479,7 +472,7 @@ namespace MultiAgent.searchClient
                     {
                         s.Append(box.Letter);
                     }
-                    else if (Walls[row, column])
+                    else if (Level.Walls[row, column])
                     {
                         s.Append('+');
                     }
@@ -547,12 +540,12 @@ namespace MultiAgent.searchClient
 
             foreach (var (agentPosition, agent) in PositionsOfAgents)
             {
-                result = prime * result + (((agentPosition.Row + 1) * 21) * Agents.Count + (agentPosition.Column + 1) * 32) * (agent.Number + 1);
+                result = prime * result + (((agentPosition.Row + 1) * 21) * Level.Agents.Count + (agentPosition.Column + 1) * 32) * (agent.Number + 1);
             }
 
             foreach (var (boxPosition, box) in PositionsOfBoxes)
             {
-                result = prime * result + (((boxPosition.Row + 1) * 41) * Walls.GetLength(0) + (boxPosition.Column + 1) * 62) * box.Letter;
+                result = prime * result + (((boxPosition.Row + 1) * 41) * Level.Walls.GetLength(0) + (boxPosition.Column + 1) * 62) * box.Letter;
             }
 
             Hash = result;

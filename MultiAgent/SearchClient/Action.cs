@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MultiAgent.searchClient
+namespace MultiAgent.SearchClient
 {
     public readonly struct Action
     {

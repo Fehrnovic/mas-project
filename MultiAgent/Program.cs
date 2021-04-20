@@ -1,4 +1,4 @@
-﻿using MultiAgent.searchClient;
+﻿using MultiAgent.SearchClient;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -49,12 +49,12 @@ namespace MultiAgent
             if (levelName == null)
             {
                 // Read from Console (stdin)
-                return SearchClient.ParseLevel(new LevelReader(LevelReader.Type.Console));
+                return SearchClient.SearchClient.ParseLevel(new LevelReader(LevelReader.Type.Console));
             }
 
             var filePath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName + "/levels/" + levelName;
 
-            return SearchClient.ParseLevel(new LevelReader(LevelReader.Type.File, File.ReadAllLines(filePath)));
+            return SearchClient.SearchClient.ParseLevel(new LevelReader(LevelReader.Type.File, File.ReadAllLines(filePath)));
         }
 
         private static void ShouldDebug(string[] args)
