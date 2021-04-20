@@ -1,26 +1,34 @@
-﻿using MultiAgent.SearchClient;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using MultiAgent.SearchClient;
+using MultiAgent.SearchClient.Search;
 
 namespace MultiAgent
 {
     class Program
     {
+        public static string[] Args;
         public static void Main(string[] args)
         {
+            // Set the program args to a static field
+            Args = args;
+
+            // Setup the Console
             Console.SetIn(new StreamReader(Console.OpenStandardInput()));
             Console.WriteLine("SearchClient");
 
             // Test if the debug flag is enabled
-            ShouldDebug(args);
+            ShouldDebug();
 
-            // Read from file (FileBuffer) if level name is specified. Use Console otherwise
-            var initialState = ParseLevel("SAFirefly.lvl");
-            // var initialState = ParseLevel();
+            // Initialize the level
+            Level.ParseLevel("SAFirefly.lvl");
 
-            var plan = GraphSearch.Search(initialState, new BFSFrontier());
+            // Set the GraphSearch to output progress (notice: only quick solutions will crash editor...)
+            // GraphSearch.OutputProgress = true;
+
+            var plan = GraphSearch.Search(new State(Level.Agents, Level.Boxes), new BFSFrontier());
             if (plan == null)
             {
                 Console.Error.WriteLine("Unable to solve level.");
@@ -44,22 +52,9 @@ namespace MultiAgent
             }
         }
 
-        private static State ParseLevel(string levelName = null)
+        private static void ShouldDebug()
         {
-            if (levelName == null)
-            {
-                // Read from Console (stdin)
-                return SearchClient.SearchClient.ParseLevel(new LevelReader(LevelReader.Type.Console));
-            }
-
-            var filePath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName + "/levels/" + levelName;
-
-            return SearchClient.SearchClient.ParseLevel(new LevelReader(LevelReader.Type.File, File.ReadAllLines(filePath)));
-        }
-
-        private static void ShouldDebug(string[] args)
-        {
-            if (args.Length <= 0 || args[0] != "debug")
+            if (Args.Length <= 0 || Args[0] != "debug")
             {
                 return;
             }

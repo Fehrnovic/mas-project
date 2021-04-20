@@ -1,4 +1,6 @@
-﻿namespace MultiAgent.SearchClient
+﻿using MultiAgent.SearchClient.Utils;
+
+namespace MultiAgent.SearchClient
 {
     public class Box
     {

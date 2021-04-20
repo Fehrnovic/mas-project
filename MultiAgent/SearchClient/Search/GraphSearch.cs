@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace MultiAgent.SearchClient
+namespace MultiAgent.SearchClient.Search
 {
     public class GraphSearch
     {
+        public static bool OutputProgress = false;
         private static readonly Stopwatch Timer = new();
 
         public static Action[][] Search(State initialState, IFrontier frontier)
@@ -19,36 +20,28 @@ namespace MultiAgent.SearchClient
 
             while (true)
             {
-                if (++iterations % 100000 == 0)
+                if (OutputProgress)
                 {
-                    PrintSearchStatus(exploredStates, frontier);
+                    if (++iterations % 100000 == 0)
+                    {
+                        PrintSearchStatus(exploredStates, frontier);
+                    }
                 }
+
 
                 if (frontier.IsEmpty())
                 {
                     return null;
                 }
 
-                State state = frontier.Pop();
-                //
-                // if (iterations % 100000 == 0)
-                // {
-                //     Console.Error.WriteLine(state.ToString());
-                // }
-
-                // Console.WriteLine(state.Agents.Count);
-                // Console.WriteLine(state.Agents[0].Position.Row + " " + state.Agents[0].Position.Col);
-                // Agent ag = state.AgentAt(new Position(1, 1));
-                // Console.Error.WriteLine($"Found agent: {ag.Number}");
-                // Console.Error.WriteLine(state.ToString());
-                //
-                // return null;
-
-
+                var state = frontier.Pop();
                 if (state.IsGoalState())
                 {
-                    Console.Error.WriteLine("Found goal with following status:");
-                    PrintSearchStatus(exploredStates, frontier);
+                    if (OutputProgress)
+                    {
+                        Console.Error.WriteLine("Found goal with following status:");
+                        PrintSearchStatus(exploredStates, frontier);
+                    }
 
                     return state.ExtractPlan();
                 }

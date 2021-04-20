@@ -454,3 +454,5 @@ FodyWeavers.xsd
 .idea/.idea.MultiAgent/.idea/misc.xml
 
 .idea/.idea.MultiAgent/.idea/modules.xml
+
+.DS_Store

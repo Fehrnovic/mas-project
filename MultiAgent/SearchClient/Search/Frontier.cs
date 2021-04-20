@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MultiAgent.SearchClient
+namespace MultiAgent.SearchClient.Search
 {
     public interface IFrontier
     {

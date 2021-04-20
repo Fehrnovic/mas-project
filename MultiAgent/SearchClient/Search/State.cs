@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using MultiAgent.SearchClient.Utils;
 
-namespace MultiAgent.SearchClient
+namespace MultiAgent.SearchClient.Search
 {
     public class State
     {
@@ -462,9 +463,9 @@ namespace MultiAgent.SearchClient
         public override string ToString()
         {
             var s = new StringBuilder();
-            for (var row = 0; row < Level.Walls.GetLength(0); row++)
+            for (var row = 0; row < Level.Rows; row++)
             {
-                for (var column = 0; column < Level.Walls.GetLength(1); column++)
+                for (var column = 0; column < Level.Columns; column++)
                 {
                     var box = BoxAt(new Position(row, column));
                     var agent = AgentAt(new Position(row, column));
@@ -545,7 +546,7 @@ namespace MultiAgent.SearchClient
 
             foreach (var (boxPosition, box) in PositionsOfBoxes)
             {
-                result = prime * result + (((boxPosition.Row + 1) * 41) * Level.Walls.GetLength(0) + (boxPosition.Column + 1) * 62) * box.Letter;
+                result = prime * result + (((boxPosition.Row + 1) * 41) * Level.Rows + (boxPosition.Column + 1) * 62) * box.Letter;
             }
 
             Hash = result;

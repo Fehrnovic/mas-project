@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MultiAgent.SearchClient
+namespace MultiAgent.SearchClient.Utils
 {
     public readonly struct Position : IEquatable<Position>
     {
