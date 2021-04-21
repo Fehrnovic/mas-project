@@ -1,39 +1,26 @@
-﻿using System;
+﻿using MultiAgent.SearchClient.Utils;
 
-namespace MultiAgent.searchClient
+namespace MultiAgent.SearchClient
 {
     public class Box
     {
         public readonly char Letter;
-        public Position Position;
         public readonly Color Color;
+        private readonly Position _initialPosition;
 
-        public Box(char letter,  Color color)
+        public Box(char letter, Color color, Position initialPosition)
         {
             Letter = letter;
             Color = color;
+            _initialPosition = initialPosition;
         }
 
-        public Box(char letter, Color color, Position position)
+        public Position GetInitialLocation()
         {
-            Letter = letter;
-            Color = color;
-            Position = position;
+            return _initialPosition;
         }
 
-        public override bool Equals(object obj)
-        {
-            if (obj is Box box)
-            {
-                return Letter == box.Letter && Color == box.Color == Position.Equals(box.Position);
-            }
-
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Letter, Color, Position);
-        }
+        // DO NOT OVERWRITE EQUALS && HASHCODE!!
+        // TWO BOXES SHOULD ONLY BE EQUAL ON SAME REFERENCE
     }
 }

@@ -4,7 +4,7 @@ set -e
 # Set the memory, frontier type, level, speed and timeout
 MEMORY="-Xmx16g"
 FRONTIER="-bfs"
-LEVEL="levels/SAFirefly.lvl"
+LEVEL="levels/MAthomasAppartment_bluecyanpurple.lvl"
 SPEED=500
 TIMEOUT=1800000
 
@@ -15,7 +15,7 @@ DEBUG=0
 dotnet build --nologo --verbosity quiet -consoleLoggerParameters:NoSummary
 
 # Run
-if [ $DEBUG == 1 ]; then RUN_FLAG="-- debug"; else RUN_FLAG="--configuration Release --verbosity quiet"; fi
+if [ $DEBUG == 1 ]; then RUN_FLAG="-- debug console"; else RUN_FLAG="-- no-debug console"; fi
 RUN_STRING="dotnet run ${RUN_FLAG}"
 
 # Echo the command to be run

@@ -1,45 +1,31 @@
-﻿using System;
+﻿using MultiAgent.SearchClient.Utils;
 
-namespace MultiAgent.searchClient
+namespace MultiAgent.SearchClient
 {
     public class Agent
     {
         public readonly int Number;
         public readonly Color Color;
-        public Position Position;
+        private readonly Position _initialPosition;
 
-        public Agent(int number, Color color)
+        public Agent(int number, Color color, Position initialPosition)
         {
             Number = number;
             Color = color;
+            _initialPosition = initialPosition;
         }
 
-        public Agent(int number, Position position)
+        public Position GetInitialLocation()
         {
-            Number = number;
-            Position = position;
+            return _initialPosition;
         }
 
-        public Agent(int number, Color color, Position position)
-        {
-            Number = number;
-            Color = color;
-            Position = position;
-        }
+        // DO NOT OVERWRITE EQUAL / HASHCODE!
+        // TWO AGENTS SHOULD ALWAYS REFERENCE THE SAME AGENT
 
-        public override bool Equals(object obj)
+        public override string ToString()
         {
-            if (obj is Agent agent)
-            {
-                return Number == agent.Number && Color == agent.Color == Position.Equals(agent.Position);
-            }
-
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Number, Color, Position);
+            return $"{Number}";
         }
     }
 }

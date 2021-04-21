@@ -1,65 +1,74 @@
-﻿using MultiAgent.searchClient;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
+using MultiAgent.SearchClient;
+using MultiAgent.SearchClient.CBS;
+using MultiAgent.SearchClient.Search;
+using Action = MultiAgent.SearchClient.Action;
 
 namespace MultiAgent
 {
     class Program
     {
+        public static string[] Args;
         public static void Main(string[] args)
         {
+            // Set the program args to a static field
+            Args = args;
+
+            // Setup the Console
             Console.SetIn(new StreamReader(Console.OpenStandardInput()));
             Console.WriteLine("SearchClient");
 
             // Test if the debug flag is enabled
-            ShouldDebug(args);
+            ShouldDebug();
 
-            // Read from file (FileBuffer) if level name is specified. Use Console otherwise
-            // var initialState = ParseLevel("SAFirefly.lvl");
-            var initialState = ParseLevel();
+            // Initialize the level
+            Level.ParseLevel("custom/MA_Simple_Delegate.lvl");
 
-            var plan = GraphSearch.Search(initialState, new BFSFrontier());
-            if (plan == null)
+            // Set the GraphSearch to output progress (notice: only quick solutions will crash editor...)
+            GraphSearch.OutputProgress = true;
+
+            var solution = CBS.Run();
+
+            var noOp = new Action("NoOp", ActionType.NoOp, 0, 0, 0, 0);
+
+            var maxIndex = solution.Max(a => a.Count);
+
+            foreach (var actionList in solution)
             {
-                Console.Error.WriteLine("Unable to solve level.");
-                Environment.Exit(0);
+                if (actionList.Count < maxIndex)
+                {
+                    for (var i = actionList.Count; i < maxIndex; i++)
+                    {
+                        actionList.Add(noOp);
+                    }
+                }
             }
 
-            Environment.Exit(0);
-
-            foreach (var jointAction in plan)
+            for (var i = 1; i < solution[0].Count; i++)
             {
-                Console.Write(jointAction[0].Name);
-
-                for (int action = 1; action < jointAction.Length; ++action)
+                for (var j = 0; j < solution.Count; j++)
                 {
-                    Console.Write("|");
-                    Console.Write(jointAction[action].Name);
+                    Console.Write(solution[j][i].Name);
+                    Console.Error.Write(solution[j][i].Name);
+
+                    if (j != solution.Count - 1)
+                    {
+                        Console.Write("|");
+                        Console.Error.Write("|");
+                    }
                 }
                 Console.WriteLine();
-                // We must read the server's response to not fill up the stdin buffer and block the server.
-                Console.ReadLine();
+                Console.Error.WriteLine();
             }
         }
 
-        private static State ParseLevel(string levelName = null)
+        private static void ShouldDebug()
         {
-            if (levelName == null)
-            {
-                // Read from Console (stdin)
-                return SearchClient.ParseLevel(new LevelReader(LevelReader.Type.Console));
-            }
-
-            var filePath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName + "/levels/" + levelName;
-
-            return SearchClient.ParseLevel(new LevelReader(LevelReader.Type.File, File.ReadAllLines(filePath)));
-        }
-
-        private static void ShouldDebug(string[] args)
-        {
-            if (args.Length <= 0 || args[0] != "debug")
+            if (Args.Length <= 0 || Args[0] != "debug")
             {
                 return;
             }

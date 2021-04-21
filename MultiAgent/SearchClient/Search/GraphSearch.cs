@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using MultiAgent.SearchClient.Utils;
 
-namespace MultiAgent.searchClient
+namespace MultiAgent.SearchClient.Search
 {
     public class GraphSearch
     {
-        private static Stopwatch timer = new();
+        public static bool OutputProgress = false;
+        private static readonly Stopwatch Timer = new();
 
-        public static Action[][] Search(State initialState, IFrontier frontier)
+        public static List<(Position position, Action action)> Search(State initialState, IFrontier frontier)
         {
-            timer.Start();
+            Timer.Start();
 
             var iterations = 0;
 
@@ -19,41 +21,34 @@ namespace MultiAgent.searchClient
 
             while (true)
             {
-                if (++iterations % 100000 == 0)
+                if (OutputProgress)
                 {
-                    PrintSearchStatus(exploredStates, frontier);
+                    if (++iterations % 100000 == 0)
+                    {
+                        PrintSearchStatus(exploredStates, frontier);
+                    }
                 }
+
 
                 if (frontier.IsEmpty())
                 {
                     return null;
                 }
 
-                State state = frontier.Pop();
-                //
-                // if (iterations % 100000 == 0)
-                // {
-                //     Console.Error.WriteLine(state.ToString());
-                // }
+                var state = frontier.Pop();
+                exploredStates.Add(state);
 
-                // Console.WriteLine(state.Agents.Count);
-                // Console.WriteLine(state.Agents[0].Position.Row + " " + state.Agents[0].Position.Col);
-                // Agent ag = state.AgentAt(new Position(1, 1));
-                // Console.Error.WriteLine($"Found agent: {ag.Number}");
-                // Console.Error.WriteLine(state.ToString());
-                //
-                // return null;
-
-
-                if (state.IsGoalState())
+                if (state.IsGoalState(exploredStates))
                 {
-                    Console.Error.WriteLine("Found goal with following status:");
-                    PrintSearchStatus(exploredStates, frontier);
+                    if (OutputProgress)
+                    {
+                        Console.Error.WriteLine("Found goal with following status:");
+                        PrintSearchStatus(exploredStates, frontier);
+                    }
 
                     return state.ExtractPlan();
                 }
 
-                exploredStates.Add(state);
 
                 var reachableStates = state.GetExpandedStates();
 
@@ -69,7 +64,7 @@ namespace MultiAgent.searchClient
 
         private static void PrintSearchStatus(HashSet<State> exploredStates, IFrontier frontier)
         {
-            var elapsedTime = (timer.ElapsedMilliseconds) / 1000.0;
+            var elapsedTime = (Timer.ElapsedMilliseconds) / 1000.0;
             Console.Error.WriteLine(
                 $"#Expanded {exploredStates.Count}, #Frontier: {frontier.Size()}, #Generated: {exploredStates.Count + frontier.Size()}, Time: {elapsedTime}");
         }

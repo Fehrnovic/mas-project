@@ -1,23 +1,23 @@
 ﻿using System;
 
-namespace MultiAgent.searchClient
+namespace MultiAgent.SearchClient.Utils
 {
     public static class ColorExtension
     {
-        public static Color FromString(String s)
+        public static Color FromString(string s)
         {
-            return (s.ToLower()) switch
+            return s.ToLower() switch
             {
-                "blue" => Color.Blue,
                 "red" => Color.Red,
+                "blue" => Color.Blue,
                 "cyan" => Color.Cyan,
-                "purple" => Color.Purple,
-                "green" => Color.Green,
-                "orange" => Color.Orange,
                 "pink" => Color.Pink,
                 "grey" => Color.Grey,
-                "lightblue" => Color.LightBlue,
+                "green" => Color.Green,
                 "brown" => Color.Brown,
+                "purple" => Color.Purple,
+                "orange" => Color.Orange,
+                "lightblue" => Color.LightBlue,
                 _ => throw new ArgumentOutOfRangeException(s),
             };
         }
@@ -25,15 +25,15 @@ namespace MultiAgent.searchClient
 
     public enum Color
     {
-        Blue,
         Red,
+        Blue,
         Cyan,
-        Purple,
-        Green,
-        Orange,
         Pink,
         Grey,
+        Green,
+        Brown,
+        Purple,
+        Orange,
         LightBlue,
-        Brown
     }
 }
