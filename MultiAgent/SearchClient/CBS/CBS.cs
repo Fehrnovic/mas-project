@@ -107,6 +107,11 @@ namespace MultiAgent.SearchClient.CBS
                                     ? followConflict.FollowerTime
                                     : followConflict.FollowerTime - 1,
                             };
+
+                            if (constraint.Time == 0)
+                            {
+                                continue;
+                            }
                             break;
 
                         default:

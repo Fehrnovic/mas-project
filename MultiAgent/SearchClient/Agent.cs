@@ -22,5 +22,10 @@ namespace MultiAgent.SearchClient
 
         // DO NOT OVERWRITE EQUAL / HASHCODE!
         // TWO AGENTS SHOULD ALWAYS REFERENCE THE SAME AGENT
+
+        public override string ToString()
+        {
+            return $"{Number}";
+        }
     }
 }
