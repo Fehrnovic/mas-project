@@ -266,14 +266,20 @@ namespace MultiAgent.SearchClient.Search
             return PositionsOfBoxes.TryGetValue(position, out var box) ? box : null;
         }
 
-        public bool IsGoalState()
+        public bool IsGoalState(HashSet<State> exploredStates)
         {
-            if (AgentGoal == null)
+            if (AgentGoal == null || AgentPosition == AgentGoal.GetInitialLocation())
             {
+                if (Constraints.Any() && Constraints.Max(c => c.Time) > Time)
+                {
+                    exploredStates.Clear();
+                    return false;
+                }
+
                 return true;
             }
 
-            return AgentPosition == AgentGoal.GetInitialLocation();
+            return false;
         }
 
         public List<(Position position, Action action)> ExtractPlan()
@@ -286,7 +292,7 @@ namespace MultiAgent.SearchClient.Search
                 state = state.Parent;
             }
 
-            plan[0] = (AgentPosition, state.Action);
+            plan[0] = (state.AgentPosition, state.Action);
 
             return plan.ToList();
         }
@@ -330,10 +336,17 @@ namespace MultiAgent.SearchClient.Search
                 return false;
             }
 
-            var constraints = Constraints.Where(c => c.Time == Time + 1).ToList();
-            var constraints2 = state.Constraints.Where(c => c.Time == state.Time + 1).ToList();
+            // Should +1?
 
-            return Agent == state.Agent && AgentPosition == state.AgentPosition && !constraints.Except(constraints2).Any();
+            var constraints = Constraints.Where(c => c.Time == Time).ToList();
+            var constraints2 = state.Constraints.Where(c => c.Time == state.Time).ToList();
+
+            var isEqual = Agent == state.Agent
+                   && AgentPosition == state.AgentPosition
+                   && constraints.Count == constraints2.Count
+                   && !constraints.Except(constraints2).Any();
+
+            return isEqual;
         }
 
         public override int GetHashCode()

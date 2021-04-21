@@ -72,7 +72,7 @@ namespace MultiAgent.SearchClient.CBS
                 if (conflict == null)
                 {
                     var actions = new List<List<Action>>();
-                    foreach (var agent in Level.Agents)
+                    foreach (var agent in Level.Agents.OrderBy(a => a.Number))
                     {
                         actions.Add(P.Solution[agent].Select(e => e.action).ToList());
                     }

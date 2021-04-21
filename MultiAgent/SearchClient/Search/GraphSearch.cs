@@ -36,7 +36,9 @@ namespace MultiAgent.SearchClient.Search
                 }
 
                 var state = frontier.Pop();
-                if (state.IsGoalState())
+                exploredStates.Add(state);
+
+                if (state.IsGoalState(exploredStates))
                 {
                     if (OutputProgress)
                     {
@@ -47,7 +49,6 @@ namespace MultiAgent.SearchClient.Search
                     return state.ExtractPlan();
                 }
 
-                exploredStates.Add(state);
 
                 var reachableStates = state.GetExpandedStates();
 
