@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using MultiAgent.SearchClient;
+using MultiAgent.SearchClient.CBS;
 using MultiAgent.SearchClient.Search;
+using Action = MultiAgent.SearchClient.Action;
 
 namespace MultiAgent
 {
@@ -23,32 +26,43 @@ namespace MultiAgent
             ShouldDebug();
 
             // Initialize the level
-            Level.ParseLevel("SAFirefly.lvl");
+            Level.ParseLevel("custom/MA_Simple.lvl");
 
             // Set the GraphSearch to output progress (notice: only quick solutions will crash editor...)
             // GraphSearch.OutputProgress = true;
 
-            var plan = GraphSearch.Search(new State(Level.Agents, Level.Boxes), new BFSFrontier());
-            if (plan == null)
+            var solution = CBS.Run();
+
+            var noOp = new Action("NoOp", ActionType.NoOp, 0, 0, 0, 0);
+
+            var maxIndex = solution.Max(a => a.Count);
+
+            foreach (var actionList in solution)
             {
-                Console.Error.WriteLine("Unable to solve level.");
-                Environment.Exit(0);
+                if (actionList.Count < maxIndex)
+                {
+                    for (var i = actionList.Count; i < maxIndex; i++)
+                    {
+                        actionList.Add(noOp);
+                    }
+                }
             }
 
-            Environment.Exit(0);
-
-            foreach (var jointAction in plan)
+            for (var i = 1; i < solution[0].Count; i++)
             {
-                Console.Write(jointAction[0].Name);
-
-                for (int action = 1; action < jointAction.Length; ++action)
+                for (var j = 0; j < solution.Count; j++)
                 {
-                    Console.Write("|");
-                    Console.Write(jointAction[action].Name);
+                    Console.Write(solution[j][i].Name);
+                    Console.Error.Write(solution[j][i].Name);
+
+                    if (j != solution.Count - 1)
+                    {
+                        Console.Write("|");
+                        Console.Error.Write("|");
+                    }
                 }
                 Console.WriteLine();
-                // We must read the server's response to not fill up the stdin buffer and block the server.
-                Console.ReadLine();
+                Console.Error.WriteLine();
             }
         }
 

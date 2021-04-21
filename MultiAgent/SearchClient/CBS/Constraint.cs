@@ -4,21 +4,16 @@ namespace MultiAgent.SearchClient.CBS
 {
     public interface IConstraint
     {
+        public Agent Agent { get; set; }
+        public int Time { get; set; }
     }
 
-    public class Constraint : IConstraint
+    public class AgentConstraint : IConstraint
     {
-        public Agent Agent;
+        public Agent Agent { get; set; }
+        public int Time { get; set; }
+
         public Position Position;
-        public int Time;
-    }
-
-    public class EdgeConstraint : IConstraint
-    {
-        public Agent Agent;
-        public Position Position1;
-        public Position Position2;
-        public int Time;
     }
 
     // Box constraints? PullConstraint, PushConstraint or BoxConstraint?

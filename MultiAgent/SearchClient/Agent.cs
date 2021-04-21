@@ -6,7 +6,7 @@ namespace MultiAgent.SearchClient
     {
         public readonly int Number;
         public readonly Color Color;
-        private Position _initialPosition;
+        private readonly Position _initialPosition;
 
         public Agent(int number, Color color, Position initialPosition)
         {

@@ -5,8 +5,8 @@ namespace MultiAgent.SearchClient
     public class Box
     {
         public readonly char Letter;
-        private Position _initialPosition;
         public readonly Color Color;
+        private readonly Position _initialPosition;
 
         public Box(char letter, Color color, Position initialPosition)
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.Search
 {
@@ -9,7 +10,7 @@ namespace MultiAgent.SearchClient.Search
         public static bool OutputProgress = false;
         private static readonly Stopwatch Timer = new();
 
-        public static Action[][] Search(State initialState, IFrontier frontier)
+        public static List<(Position position, Action action)> Search(State initialState, IFrontier frontier)
         {
             Timer.Start();
 

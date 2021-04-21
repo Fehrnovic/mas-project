@@ -7,10 +7,10 @@ namespace MultiAgent.SearchClient
 {
     public class Level
     {
-        public static List<Agent> AgentGoals;
-        public static List<Box> BoxGoals;
         public static List<Agent> Agents;
+        public static List<Agent> AgentGoals;
         public static List<Box> Boxes;
+        public static List<Box> BoxGoals;
         public static bool[,] Walls;
 
         public static int Rows;

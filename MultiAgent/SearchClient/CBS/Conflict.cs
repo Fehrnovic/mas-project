@@ -1,36 +1,32 @@
+using System.Collections.Generic;
 using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.CBS
 {
     public interface IConflict
     {
+        public List<Agent> ConflictedAgents { get; }
     }
 
-    public class Conflict : IConflict
+    public class PositionConflict : IConflict
     {
-        public Agent AgentI;
-        public Agent AgentJ;
+        public Agent Agent1;
+        public Agent Agent2;
         public Position Position;
         public int Time;
+
+        public List<Agent> ConflictedAgents => new() {Agent1, Agent2};
     }
 
-    // Two agents moving to each other previous positions
-    public class EdgeConflict : IConflict
+    public class FollowConflict : IConflict
     {
-        public Agent AgentI;
-        public Agent AgentJ;
-        public Position Position1;
-        public Position Position2;
-        public int Time;
-    }
+        public Agent Leader;
+        public Agent Follower;
+        public Position FollowerPosition;
+        public int FollowerTime;
 
-    // How to handle TrainConflict? (Two agents moving right after each other...)
-    // public class TrainConflict : IConflict
-    // {
-    //     public Agent AgentI;
-    //     public Agent AgentJ;
-    //     ...
-    // }
+        public List<Agent> ConflictedAgents => new() {Leader, Follower};
+    }
 
     // Box Conflicts?
 }
