@@ -51,22 +51,11 @@ namespace MultiAgent.SearchClient.CBS
                     {
                         var (agent1, agent1Solution) = clonedSolution.ElementAt(agent1Index);
                         var (agent2, agent2Solution) = clonedSolution.ElementAt(agent2Index);
-
-                        // Check for PositionConflict
-                        if (agent1Solution[time].position == agent2Solution[time].position)
-                        {
-                            return new PositionConflict
-                            {
-                                Agent1 = agent1,
-                                Agent2 = agent2,
-                                Position = agent1Solution[time].position,
-                                Time = time,
-                            };
-                        }
-
+                        
                         // Check if Agent 1 follows Agent 2
                         if (agent1Solution[time].position == agent2Solution[time - 1].position)
                         {
+                            var position = agent1Solution[time].position;
                             return new FollowConflict
                             {
                                 Leader = agent2,
@@ -79,12 +68,28 @@ namespace MultiAgent.SearchClient.CBS
                         // Check if Agent 2 follows Agent 1
                         if (agent2Solution[time].position == agent1Solution[time - 1].position)
                         {
+                            var position = agent2Solution[time].position;
+
                             return new FollowConflict
                             {
                                 Leader = agent1,
                                 Follower = agent2,
                                 FollowerPosition = agent2Solution[time].position,
                                 FollowerTime = time,
+                            };
+                        }
+
+                        // Check for PositionConflict
+                        if (agent1Solution[time].position == agent2Solution[time].position)
+                        {
+                            var position = agent1Solution[time].position;
+
+                            return new PositionConflict
+                            {
+                                Agent1 = agent1,
+                                Agent2 = agent2,
+                                Position = agent1Solution[time].position,
+                                Time = time,
                             };
                         }
                     }

@@ -10,7 +10,8 @@ namespace MultiAgent.SearchClient.CBS
     {
         public static List<List<Action>> Run()
         {
-            var OPEN = new List<Node>();
+            var OPEN = new Dictionary<int, Queue<Node>>();
+            var exploredNodes = new HashSet<Node>();
 
             var root = new Node
             {
@@ -58,15 +59,24 @@ namespace MultiAgent.SearchClient.CBS
             foreach (var agent in Level.Agents)
             {
                 var agentGoal = Level.AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number);
-                root.Solution[agent] = GraphSearch.Search(new State(agent, agentGoal, new List<Box>(), root.Constraints), new BFSFrontier());
+                root.Solution[agent] =
+                    GraphSearch.Search(new State(agent, agentGoal, new List<Box>(), root.Constraints),
+                        new BFSFrontier());
             }
 
-            OPEN.Add(root);
+            OPEN.Add(root.Cost, new Queue<Node>(new[] {root}));
+            exploredNodes.Add(root);
 
             while (OPEN.Any())
             {
-                var P = OPEN.OrderBy(n => n.Cost).First();
-                OPEN.Remove(P);
+                var minCost = OPEN.Keys.Min();
+
+                var P = OPEN[minCost].Dequeue();
+
+                if (!OPEN[minCost].Any())
+                {
+                    OPEN.Remove(minCost);
+                }
 
                 var conflict = P.GetConflict();
                 if (conflict == null)
@@ -112,6 +122,7 @@ namespace MultiAgent.SearchClient.CBS
                             {
                                 continue;
                             }
+
                             break;
 
                         default:
@@ -127,7 +138,15 @@ namespace MultiAgent.SearchClient.CBS
 
                     if (A.Solution[conflictedAgent] != null)
                     {
-                        OPEN.Add(A);
+                        var cost = A.Cost;
+
+                        if (!OPEN.ContainsKey(cost))
+                        {
+                            OPEN.Add(cost, new Queue<Node>());
+                        }
+
+                        OPEN[cost].Enqueue(A);
+                        exploredNodes.Add(A);
                     }
                 }
             }

@@ -131,7 +131,7 @@ namespace MultiAgent.SearchClient.Search
         public List<State> GetExpandedStates()
         {
             // Determine list of applicable actions for the agent
-            List<State> reachableStates = new();
+            List<State> reachableStates = new(16);
 
             foreach (var action in Action.AllActions)
             {
