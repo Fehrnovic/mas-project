@@ -336,16 +336,17 @@ namespace MultiAgent.SearchClient.Search
                 return false;
             }
 
-            // Should +1?
+            // return AgentPosition == state.AgentPosition && Time == state.Time;
+
 
             var constraints = Constraints.Where(c => c.Time == Time).ToList();
             var constraints2 = state.Constraints.Where(c => c.Time == state.Time).ToList();
-
+            
             var isEqual = Agent == state.Agent
                    && AgentPosition == state.AgentPosition
                    && constraints.Count == constraints2.Count
                    && !constraints.Except(constraints2).Any();
-
+            
             return isEqual;
         }
 
