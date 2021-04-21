@@ -52,4 +52,67 @@ namespace MultiAgent.SearchClient.Search
             return "breadth-first search";
         }
     }
+
+
+    public class BestFirstFrontier : IFrontier
+    {
+        public readonly Dictionary<int, Queue<State>> Map = new();
+        public readonly HashSet<State> Set = new();
+
+        private readonly Heuristic Heuristic;
+
+        public BestFirstFrontier(Heuristic heuristic)
+        {
+            Heuristic = heuristic;
+        }
+
+        public void Add(State state)
+        {
+            int score = Heuristic.CalculateHeuristic(state);
+
+            if (!Map.ContainsKey(score))
+            {
+                Map.Add(score, new Queue<State>());
+            }
+
+            Map[score].Enqueue(state);
+            Set.Add(state);
+        }
+
+        public State Pop()
+        {
+            int minScore = Map.Keys.Min();
+
+            State state = Map[minScore].Dequeue();
+
+            if (!Map[minScore].Any())
+            {
+                Map.Remove(minScore);
+            }
+
+            Set.Remove(state);
+
+            return state;
+        }
+
+        public bool IsEmpty()
+        {
+            return !Set.Any();
+        }
+
+        public int Size()
+        {
+            return Set.Count;
+        }
+
+        public bool Contains(State state)
+        {
+            return Set.Contains(state);
+        }
+
+        public string GetName()
+        {
+            return "best-first search";
+        }
+    }
 }

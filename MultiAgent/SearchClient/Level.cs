@@ -140,6 +140,64 @@ namespace MultiAgent.SearchClient
 
             Rows = rowsCount;
             Columns = columnsCount;
+            
+            Console.Error.WriteLine("Starting initialization of distance map");
+            InitializeDistanceMap();
+            Console.Error.WriteLine("Distance map initialized");
+
+        }
+        
+        public static Dictionary<(Position From, Position To), int> DistanceBetweenPositions = new();
+
+        public static void InitializeDistanceMap()
+        {
+            DistanceBetweenPositions = new Dictionary<(Position From, Position To), int>();
+
+            // Create graph representation of level in order to pre-analyze levle
+            var graph = new Graph();
+            
+            for (int firstPositionRow = 1; firstPositionRow < Walls.GetLength(0); firstPositionRow++)
+            {
+                for (int firstPositionCol = 1; firstPositionCol < Walls.GetLength(1); firstPositionCol++)
+                {
+                    // For each cell in the level that is NOT a wall:
+                    if (Walls[firstPositionRow, firstPositionCol])
+                    {
+                        continue;
+                    }
+
+                    // Iterate over every other position
+                    for (int secondPositionRow = 1; secondPositionRow < Walls.GetLength(0); secondPositionRow++)
+                    {
+                        for (int secondPositionCol = 1; secondPositionCol < Walls.GetLength(1); secondPositionCol++)
+                        {
+                            // For each cell in the level that is NOT a wall:
+                            if (Walls[secondPositionRow, secondPositionCol])
+                            {
+                                continue;
+                            }
+
+                            var positionFrom = new Position(firstPositionRow, firstPositionCol);
+                            var positionTo = new Position(secondPositionRow, secondPositionCol);
+
+                            // If positions equal - distance between them = 0
+                            if (positionFrom.Equals(positionTo))
+                            {
+                                DistanceBetweenPositions.Add((positionFrom, positionTo), 0);
+
+                                continue;
+                            }
+
+                            var startNode = graph.NodeGrid[firstPositionRow, firstPositionCol];
+                            var finishNode = graph.NodeGrid[secondPositionRow, secondPositionCol];
+
+                            var distance = graph.BFS(startNode, finishNode);
+
+                            DistanceBetweenPositions.Add((positionFrom, positionTo), distance);
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -26,10 +26,10 @@ namespace MultiAgent
             ShouldDebug();
 
             // Initialize the level
-            Level.ParseLevel("custom/MA_Simple.lvl");
+            Level.ParseLevel("custom/MA_Simple_Delegate.lvl");
 
             // Set the GraphSearch to output progress (notice: only quick solutions will crash editor...)
-            // GraphSearch.OutputProgress = true;
+            GraphSearch.OutputProgress = true;
 
             var solution = CBS.Run();
 

@@ -19,49 +19,53 @@ namespace MultiAgent.SearchClient.CBS
                 Solution = new Dictionary<Agent, List<(Position, Action)>>(),
             };
 
-            // var agentToBoxGoalDictionary = new Dictionary<Agent, List<Box>>();
-            //
-            // var usedBoxes = new List<Box>();
-            //
-            // foreach (var boxGoal in Level.BoxGoals)
-            // {
-            //     // Find the closest box to the goal sharing the same letter that hasn't been delegated yet
-            //     Box closestBox = Level.Boxes
-            //         .Where(b => b.Letter == boxGoal.Letter && !usedBoxes.Contains(b))
-            //         .Aggregate(
-            //             (currentlyClosestBox, box) =>
-            //                 currentlyClosestBox == null ||
-            //                 (Level.DistanceBetweenPositions[(currentlyClosestBox.Position, boxGoal.Position)] >
-            //                  Level.DistanceBetweenPositions[(box.Position, boxGoal.Position)])
-            //                     ? box
-            //                     : currentlyClosestBox);
-            //
-            //     usedBoxes.Add(closestBox);
-            //
-            //     // Find the agent closest to the box just found
-            //     Agent closestAgent = Level.Agents
-            //         .Where(a => closestBox.Color.Equals(a.Color))
-            //         .Aggregate((currentlyClosestAgent, agent)
-            //             => currentlyClosestAgent == null ||
-            //                (Level.DistanceBetweenPositions[(currentlyClosestAgent.Position, closestBox.Position)]
-            //                 > Level.DistanceBetweenPositions[(agent.Position, closestBox.Position)])
-            //                 ? agent
-            //                 : currentlyClosestAgent);
-            //
-            //     if (!agentToBoxGoalDictionary.ContainsKey(closestAgent))
-            //     {
-            //         agentToBoxGoalDictionary.Add(closestAgent, new List<Box>());
-            //     }
-            //
-            //     agentToBoxGoalDictionary[closestAgent].Add(boxGoal);
-            // }
+            var agentToBoxGoalDictionary = new Dictionary<Agent, List<Box>>();
+            var usedBoxes = new List<Box>();
+
+            foreach (var boxGoal in Level.BoxGoals)
+            {
+                // Find the closest box to the goal sharing the same letter that hasn't been delegated yet
+                Box closestBox = Level.Boxes
+                    .Where(b => b.Letter == boxGoal.Letter && !usedBoxes.Contains(b))
+                    .Aggregate(
+                        (currentlyClosestBox, box) =>
+                            currentlyClosestBox == null ||
+                            (Level.DistanceBetweenPositions[
+                                 (currentlyClosestBox.GetInitialLocation(), boxGoal.GetInitialLocation())] >
+                             Level.DistanceBetweenPositions[(box.GetInitialLocation(), boxGoal.GetInitialLocation())])
+                                ? box
+                                : currentlyClosestBox);
+
+                usedBoxes.Add(closestBox);
+
+                // Find the agent closest to the box just found
+                Agent closestAgent = Level.Agents
+                    .Where(a => closestBox.Color.Equals(a.Color))
+                    .Aggregate((currentlyClosestAgent, agent)
+                        => currentlyClosestAgent == null ||
+                           (Level.DistanceBetweenPositions[
+                                (currentlyClosestAgent.GetInitialLocation(), closestBox.GetInitialLocation())]
+                            > Level.DistanceBetweenPositions[
+                                (agent.GetInitialLocation(), closestBox.GetInitialLocation())])
+                            ? agent
+                            : currentlyClosestAgent);
+
+                if (!agentToBoxGoalDictionary.ContainsKey(closestAgent))
+                {
+                    agentToBoxGoalDictionary.Add(closestAgent, new List<Box>());
+                }
+
+                agentToBoxGoalDictionary[closestAgent].Add(boxGoal);
+            }
 
             foreach (var agent in Level.Agents)
             {
                 var agentGoal = Level.AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number);
+                var boxesMatchingAgent = Level.Boxes.Where(b => b.Color == agent.Color).ToList();
+                var state = new State(agent, agentGoal, boxesMatchingAgent, agentToBoxGoalDictionary[agent],
+                    root.Constraints);
                 root.Solution[agent] =
-                    GraphSearch.Search(new State(agent, agentGoal, new List<Box>(), root.Constraints),
-                        new BFSFrontier());
+                    GraphSearch.Search(state, new BestFirstFrontier(new Heuristic(state)));
             }
 
             OPEN.Add(root.Cost, new Queue<Node>(new[] {root}));
@@ -133,8 +137,12 @@ namespace MultiAgent.SearchClient.CBS
                     A.Solution = P.CloneSolution();
 
                     var agentGoal = Level.AgentGoals.FirstOrDefault(ag => ag.Number == conflictedAgent.Number);
-                    var state = new State(conflictedAgent, agentGoal, new List<Box>(), A.Constraints);
-                    A.Solution[conflictedAgent] = GraphSearch.Search(state, new BFSFrontier());
+                    var boxesMatchingAgent = Level.Boxes.Where(b => b.Color == conflictedAgent.Color).ToList();
+
+                    var state = new State(conflictedAgent, agentGoal, boxesMatchingAgent,
+                        agentToBoxGoalDictionary[conflictedAgent], A.Constraints);
+                    A.Solution[conflictedAgent] =
+                        GraphSearch.Search(state, new BestFirstFrontier(new Heuristic(state)));
 
                     if (A.Solution[conflictedAgent] != null)
                     {
