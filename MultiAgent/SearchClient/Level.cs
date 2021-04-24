@@ -25,7 +25,8 @@ namespace MultiAgent.SearchClient
             }
             else
             {
-                var filePath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName + "/levels/" + levelName;
+                var filePath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName +
+                               "/levels/" + levelName;
                 levelReader = new LevelReader(LevelReader.Type.File, File.ReadAllLines(filePath));
             }
 
@@ -140,13 +141,12 @@ namespace MultiAgent.SearchClient
 
             Rows = rowsCount;
             Columns = columnsCount;
-            
+
             Console.Error.WriteLine("Starting initialization of distance map");
             InitializeDistanceMap();
             Console.Error.WriteLine("Distance map initialized");
-
         }
-        
+
         public static Dictionary<(Position From, Position To), int> DistanceBetweenPositions = new();
 
         public static void InitializeDistanceMap()
@@ -155,7 +155,7 @@ namespace MultiAgent.SearchClient
 
             // Create graph representation of level in order to pre-analyze levle
             var graph = new Graph();
-            
+
             for (int firstPositionRow = 1; firstPositionRow < Walls.GetLength(0); firstPositionRow++)
             {
                 for (int firstPositionCol = 1; firstPositionCol < Walls.GetLength(1); firstPositionCol++)
@@ -180,13 +180,19 @@ namespace MultiAgent.SearchClient
                             var positionFrom = new Position(firstPositionRow, firstPositionCol);
                             var positionTo = new Position(secondPositionRow, secondPositionCol);
 
-                            // If positions equal - distance between them = 0
-                            if (positionFrom.Equals(positionTo))
+                            if (DistanceBetweenPositions.ContainsKey((positionFrom, positionTo)) ||
+                                DistanceBetweenPositions.ContainsKey((positionTo, positionFrom)))
                             {
-                                DistanceBetweenPositions.Add((positionFrom, positionTo), 0);
-
                                 continue;
                             }
+
+                                // If positions equal - distance between them = 0
+                                if (positionFrom.Equals(positionTo))
+                                {
+                                    DistanceBetweenPositions.Add((positionFrom, positionTo), 0);
+
+                                    continue;
+                                }
 
                             var startNode = graph.NodeGrid[firstPositionRow, firstPositionCol];
                             var finishNode = graph.NodeGrid[secondPositionRow, secondPositionCol];
@@ -194,6 +200,7 @@ namespace MultiAgent.SearchClient
                             var distance = graph.BFS(startNode, finishNode);
 
                             DistanceBetweenPositions.Add((positionFrom, positionTo), distance);
+                            DistanceBetweenPositions.Add((positionTo, positionFrom), distance);
                         }
                     }
                 }
