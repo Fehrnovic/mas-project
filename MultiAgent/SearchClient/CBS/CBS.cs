@@ -27,9 +27,12 @@ namespace MultiAgent.SearchClient.CBS
             };
 
             var agentToBoxGoalDictionary = new Dictionary<Agent, List<Box>>(Level.Agents.Count);
+            var agentToBoxDictionary = new Dictionary<Agent, List<Box>>(Level.Agents.Count);
+            
             foreach (var agent in Level.Agents)
             {
                 agentToBoxGoalDictionary.Add(agent, new List<Box>());
+                agentToBoxDictionary.Add(agent, new List<Box>());
             }
 
             var usedBoxes = new List<Box>();
@@ -62,13 +65,14 @@ namespace MultiAgent.SearchClient.CBS
                             : currentlyClosestAgent);
 
                 agentToBoxGoalDictionary[closestAgent].Add(boxGoal);
+                agentToBoxDictionary[closestAgent].Add(closestBox);
             }
 
             foreach (var agent in Level.Agents)
             {
                 var agentGoal = Level.AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number);
                 var boxesMatchingAgent = Level.Boxes.Where(b => b.Color == agent.Color).ToList();
-                var state = new State(agent, agentGoal, boxesMatchingAgent, agentToBoxGoalDictionary[agent],
+                var state = new State(agent, agentGoal, agentToBoxDictionary[agent], agentToBoxGoalDictionary[agent],
                     root.Constraints);
                 root.Solution[agent] =
                     GraphSearch.Search(state, new BestFirstFrontier(new Heuristic(state)));
@@ -151,7 +155,7 @@ namespace MultiAgent.SearchClient.CBS
                     var agentGoal = Level.AgentGoals.FirstOrDefault(ag => ag.Number == conflictedAgent.Number);
                     var boxesMatchingAgent = Level.Boxes.Where(b => b.Color == conflictedAgent.Color).ToList();
 
-                    var state = new State(conflictedAgent, agentGoal, boxesMatchingAgent,
+                    var state = new State(conflictedAgent, agentGoal, agentToBoxDictionary[conflictedAgent],
                         agentToBoxGoalDictionary[conflictedAgent], A.Constraints);
                     A.Solution[conflictedAgent] =
                         GraphSearch.Search(state, new BestFirstFrontier(new Heuristic(state)));
