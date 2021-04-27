@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
-using MultiAgent.SearchClient.Utils;
+using MultiAgent.SearchClient.Search;
 
 namespace MultiAgent.SearchClient.CBS
 {
     public class Node
     {
-        public HashSet<IConstraint> Constraints = new();
-        public Dictionary<Agent, List<(Position position, Action action)>> Solution;
+        public HashSet<Constraint> Constraints = new();
+        public Dictionary<Agent, List<Step>> Solution;
         public int Cost => CalculateCost();
 
         private int CalculateCost()
@@ -39,7 +39,7 @@ namespace MultiAgent.SearchClient.CBS
                 var maxIterations = maxSolutionLength - solution.Count;
                 for (var i = 0; i < maxIterations; i++)
                 {
-                    solution.Add((lastElement.position, null));
+                    solution.Add(new Step(lastElement.Positions, null));
                 }
             }
 
@@ -54,37 +54,48 @@ namespace MultiAgent.SearchClient.CBS
                         var (agent2, agent2Solution) = clonedSolution.ElementAt(agent2Index);
 
                         // Check for PositionConflict
-                        if (agent1Solution[time].position == agent2Solution[time].position)
+
+                        var conflictingPositions = agent1Solution[time].Positions
+                            .Intersect(agent2Solution[time].Positions)
+                            .ToList();
+
+                        if (conflictingPositions.Any())
                         {
                             return new PositionConflict
                             {
                                 Agent1 = agent1,
                                 Agent2 = agent2,
-                                Position = agent1Solution[time].position,
+                                Position = conflictingPositions.First(),
                                 Time = time,
                             };
                         }
-                        
+
                         // Check if Agent 1 follows Agent 2
-                        if (agent1Solution[time].position == agent2Solution[time - 1].position)
+                        conflictingPositions = agent1Solution[time].Positions
+                            .Intersect(agent2Solution[time - 1].Positions)
+                            .ToList();
+                        if (conflictingPositions.Any())
                         {
                             return new FollowConflict
                             {
                                 Leader = agent2,
                                 Follower = agent1,
-                                FollowerPosition = agent1Solution[time].position,
+                                FollowerPosition = conflictingPositions.First(),
                                 FollowerTime = time,
                             };
                         }
 
                         // Check if Agent 2 follows Agent 1
-                        if (agent2Solution[time].position == agent1Solution[time - 1].position)
+                        conflictingPositions = agent2Solution[time].Positions
+                            .Intersect(agent1Solution[time - 1].Positions)
+                            .ToList();
+                        if (conflictingPositions.Any())
                         {
                             return new FollowConflict
                             {
                                 Leader = agent1,
                                 Follower = agent2,
-                                FollowerPosition = agent2Solution[time].position,
+                                FollowerPosition = conflictingPositions.First(),
                                 FollowerTime = time,
                             };
                         }
@@ -95,7 +106,7 @@ namespace MultiAgent.SearchClient.CBS
             return null;
         }
 
-        public Dictionary<Agent, List<(Position position, Action action)>> CloneSolution()
+        public Dictionary<Agent, List<Step>> CloneSolution()
         {
             return Solution.ToDictionary(
                 x => x.Key,

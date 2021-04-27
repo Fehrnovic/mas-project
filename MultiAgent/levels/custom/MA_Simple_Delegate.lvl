@@ -1,29 +1,18 @@
 #domain
 hospital
 #levelname
-MA_SimpleDelegate
+MAsimple5
 #colors
-blue: 0, 1, A, B, C, D, E
+blue: 0, A
+red: 1
 #initial
-++++++++++++++
-+            +
-+  A  B   C  +
-+     0      +
-+            +
-+            +
-+ A   A   A  +
-+   D 1   E  +
-+            +
-++++++++++++++
+++++++
++0A  ++
++1    +
++++++++
 #goal
-++++++++++++++
-+  A  B    C +
-+            +
-+            +
-+            +
-+            +
-+            +
-+D          E+
-+            +
-++++++++++++++
+++++++
++    ++
++  A 1+
++++++++
 #end

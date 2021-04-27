@@ -8,12 +8,13 @@ namespace MultiAgent.SearchClient.Search
     public class GraphSearch
     {
         public static bool OutputProgress = false;
-        private static readonly Stopwatch Timer = new();
+        
+        public static readonly Stopwatch Timer = new();
 
-        public static List<(Position position, Action action)> Search(State initialState, IFrontier frontier)
+        public static List<Step> Search(State initialState, IFrontier frontier)
         {
-            Timer.Start();
-
+            Timer.Restart();
+            
             var iterations = 0;
 
             frontier.Add(initialState);

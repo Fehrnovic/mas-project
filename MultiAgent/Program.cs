@@ -12,7 +12,10 @@ namespace MultiAgent
 {
     class Program
     {
+        public static readonly Stopwatch Timer = new();
+
         public static string[] Args;
+
         public static void Main(string[] args)
         {
             // Set the program args to a static field
@@ -25,13 +28,21 @@ namespace MultiAgent
             // Test if the debug flag is enabled
             ShouldDebug();
 
+            Timer.Start();
+
             // Initialize the level
             Level.ParseLevel("custom/MA_Simple_Delegate.lvl");
 
-            // Set the GraphSearch to output progress (notice: only quick solutions will crash editor...)
-            GraphSearch.OutputProgress = true;
+            Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
+            // Set the GraphSearch to output progress (notice: only quick solutions will crash editor...)
+            // GraphSearch.OutputProgress = true;
+
+            Timer.Restart();
+            
             var solution = CBS.Run();
+            
+            Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
             var noOp = new Action("NoOp", ActionType.NoOp, 0, 0, 0, 0);
 
@@ -53,16 +64,14 @@ namespace MultiAgent
                 for (var j = 0; j < solution.Count; j++)
                 {
                     Console.Write(solution[j][i].Name);
-                    Console.Error.Write(solution[j][i].Name);
 
                     if (j != solution.Count - 1)
                     {
                         Console.Write("|");
-                        Console.Error.Write("|");
                     }
                 }
+
                 Console.WriteLine();
-                Console.Error.WriteLine();
             }
         }
 

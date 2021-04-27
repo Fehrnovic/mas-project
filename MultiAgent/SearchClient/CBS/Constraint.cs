@@ -3,20 +3,13 @@ using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.CBS
 {
-    public interface IConstraint
+    public class Constraint : IEquatable<Constraint>
     {
         public Agent Agent { get; set; }
-        public int Time { get; set; }
-    }
-
-    public class AgentConstraint : IConstraint, IEquatable<AgentConstraint>
-    {
-        public Agent Agent { get; set; }
-        public int Time { get; set; }
-
         public Position Position;
+        public int Time { get; set; }
 
-        public bool Equals(AgentConstraint other)
+        public bool Equals(Constraint other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
@@ -28,7 +21,7 @@ namespace MultiAgent.SearchClient.CBS
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((AgentConstraint) obj);
+            return Equals((Constraint) obj);
         }
 
         public override int GetHashCode()
@@ -36,19 +29,4 @@ namespace MultiAgent.SearchClient.CBS
             return HashCode.Combine(Position, Agent, Time);
         }
     }
-
-    // Box constraints? PullConstraint, PushConstraint or BoxConstraint?
-    // public class BoxConstraint : IConstraint
-    // {
-    //     public Agent Agent;
-    //     public Box Box;
-    //     public int Time;
-    // }
-    // OR
-    // public class PullConstraint : IConstraint
-    // {
-    //     public Agent Agent;
-    //     public Box Box;
-    //     public int Time;
-    // }
 }

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using MultiAgent.SearchClient.Search;
 using MultiAgent.SearchClient.Utils;
 
@@ -8,20 +10,29 @@ namespace MultiAgent.SearchClient.CBS
 {
     public static class CBS
     {
+        public static int Counter = 0;
+
         public static List<List<Action>> Run()
         {
+            var timer = new Stopwatch();
+            timer.Start();
+
             var OPEN = new Dictionary<int, Queue<Node>>();
             var exploredNodes = new HashSet<Node>();
 
             var root = new Node
             {
-                Constraints = new HashSet<IConstraint>(),
-                Solution = new Dictionary<Agent, List<(Position, Action)>>(),
+                Constraints = new HashSet<Constraint>(),
+                Solution = new Dictionary<Agent, List<Step>>(),
             };
 
-            var agentToBoxGoalDictionary = new Dictionary<Agent, List<Box>>();
-            var usedBoxes = new List<Box>();
+            var agentToBoxGoalDictionary = new Dictionary<Agent, List<Box>>(Level.Agents.Count);
+            foreach (var agent in Level.Agents)
+            {
+                agentToBoxGoalDictionary.Add(agent, new List<Box>());
+            }
 
+            var usedBoxes = new List<Box>();
             foreach (var boxGoal in Level.BoxGoals)
             {
                 // Find the closest box to the goal sharing the same letter that hasn't been delegated yet
@@ -50,11 +61,6 @@ namespace MultiAgent.SearchClient.CBS
                             ? agent
                             : currentlyClosestAgent);
 
-                if (!agentToBoxGoalDictionary.ContainsKey(closestAgent))
-                {
-                    agentToBoxGoalDictionary.Add(closestAgent, new List<Box>());
-                }
-
                 agentToBoxGoalDictionary[closestAgent].Add(boxGoal);
             }
 
@@ -73,6 +79,12 @@ namespace MultiAgent.SearchClient.CBS
 
             while (OPEN.Any())
             {
+                if (++Counter % 100 == 0)
+                {
+                    Console.Error.WriteLine(
+                        $"OPEN has size : {OPEN.Values.Count}. Time spent: {timer.ElapsedMilliseconds / 1000.0} s");
+                }
+
                 var minCost = OPEN.Keys.Min();
 
                 var P = OPEN[minCost].Dequeue();
@@ -88,7 +100,7 @@ namespace MultiAgent.SearchClient.CBS
                     var actions = new List<List<Action>>();
                     foreach (var agent in Level.Agents.OrderBy(a => a.Number))
                     {
-                        actions.Add(P.Solution[agent].Select(e => e.action).ToList());
+                        actions.Add(P.Solution[agent].Select(s => s.Action).ToList());
                     }
 
                     return actions;
@@ -98,13 +110,13 @@ namespace MultiAgent.SearchClient.CBS
                 foreach (var conflictedAgent in conflict.ConflictedAgents)
                 {
                     var A = new Node();
-                    A.Constraints = new HashSet<IConstraint>(P.Constraints);
+                    A.Constraints = new HashSet<Constraint>(P.Constraints);
 
-                    IConstraint constraint;
+                    Constraint constraint;
                     switch (conflict)
                     {
                         case PositionConflict positionConflict:
-                            constraint = new AgentConstraint
+                            constraint = new Constraint
                             {
                                 Agent = conflictedAgent,
                                 Position = positionConflict.Position,
@@ -113,7 +125,7 @@ namespace MultiAgent.SearchClient.CBS
                             break;
 
                         case FollowConflict followConflict:
-                            constraint = new AgentConstraint
+                            constraint = new Constraint
                             {
                                 Agent = conflictedAgent,
                                 Position = followConflict.FollowerPosition,
