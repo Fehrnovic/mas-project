@@ -13,6 +13,9 @@ namespace MultiAgent.SearchClient
         public static List<Box> Boxes;
         public static List<Box> BoxGoals;
         public static bool[,] Walls;
+        public static Graph Graph;
+        public static bool[,] OutsideWorld;
+        public static List<HashSet<GraphNode>> Corridors;
 
         public static int WallCount = 0;
         public static bool UseBfs => Rows * Columns - WallCount < 310;
@@ -85,14 +88,15 @@ namespace MultiAgent.SearchClient
                 line = levelReader.ReadLine();
             }
 
-            int row;
+            int row, column;
             var agents = new List<Agent>();
             var boxes = new List<Box>();
             var walls = new bool[rowsCount, columnsCount];
+            var outsideMapPositions = new List<Position>();
             for (row = 0; row < rowsCount; ++row)
             {
                 line = levelLines[row];
-                for (var column = 0; column < line.Length; ++column)
+                for (column = 0; column < line.Length; ++column)
                 {
                     var c = line[column];
 
@@ -119,6 +123,82 @@ namespace MultiAgent.SearchClient
                         walls[row, column] = true;
                         WallCount += 1;
                     }
+
+                    // Add outer row if not wall to outside map
+                    if (((row == 0 || column == 0) || (row == rowsCount - 1 || column == columnsCount - 1)) && c != '+')
+                    {
+                        outsideMapPositions.Add(new Position(row, column));
+                    }
+                }
+
+                for (var i = line.Length; i < columnsCount; i++)
+                {
+                    outsideMapPositions.Add(new Position(row, i));
+                }
+            }
+
+            //Remove all bad position neighbors
+            var badPositions = new bool[rowsCount, columnsCount];
+            foreach (var mapPosition in outsideMapPositions)
+            {
+                if (badPositions[mapPosition.Row, mapPosition.Column])
+                {
+                    // Position already explored
+                    continue;
+                }
+
+                Queue<Position> queue = new();
+                List<Position> visitedNodes = new();
+
+                queue.Enqueue(mapPosition);
+                visitedNodes.Add(mapPosition);
+
+                while (queue.Any())
+                {
+                    var currentNode = queue.Dequeue();
+                    badPositions[currentNode.Row, currentNode.Column] = true;
+
+                    var badNeighbors = new List<Position>();
+                    if (currentNode.Row > 0)
+                    {
+                        if (walls[currentNode.Row - 1, currentNode.Column] == false)
+                        {
+                            badNeighbors.Add(new Position(currentNode.Row - 1, currentNode.Column));
+                        }
+                    }
+
+                    if (currentNode.Row < rowsCount - 1)
+                    {
+                        if (walls[currentNode.Row + 1, currentNode.Column] == false)
+                        {
+                            badNeighbors.Add(new Position(currentNode.Row + 1, currentNode.Column));
+                        }
+                    }
+
+                    if (currentNode.Column > 0)
+                    {
+                        if (walls[currentNode.Row, currentNode.Column - 1] == false)
+                        {
+                            badNeighbors.Add(new Position(currentNode.Row, currentNode.Column - 1));
+                        }
+                    }
+
+                    if (currentNode.Column < columnsCount - 1)
+                    {
+                        if (walls[currentNode.Row, currentNode.Column + 1] == false)
+                        {
+                            badNeighbors.Add(new Position(currentNode.Row, currentNode.Column + 1));
+                        }
+                    }
+
+                    badNeighbors.ForEach(neighbor =>
+                    {
+                        if (!visitedNodes.Contains(neighbor))
+                        {
+                            visitedNodes.Add(neighbor);
+                            queue.Enqueue(neighbor);
+                        }
+                    });
                 }
             }
 
@@ -130,7 +210,7 @@ namespace MultiAgent.SearchClient
             row = 0;
             while (!line.StartsWith("#"))
             {
-                for (var column = 0; column < line.Length; ++column)
+                for (column = 0; column < line.Length; ++column)
                 {
                     var c = line[column];
 
@@ -151,11 +231,53 @@ namespace MultiAgent.SearchClient
             AgentGoals = agentGoals;
             BoxGoals = boxGoals;
             Walls = walls;
+            OutsideWorld = badPositions;
             Boxes = boxes;
             Agents = agents;
 
             Rows = rowsCount;
             Columns = columnsCount;
+
+            Graph = new Graph();
+            var corridorsCandidates = new List<GraphNode>();
+            for (var i = 0; i < rowsCount; i++)
+            {
+                for (var j = 0; j < columnsCount; j++)
+                {
+                    var graphNode = Graph.NodeGrid[i, j];
+                    if (graphNode == null)
+                    {
+                        continue;
+                    }
+
+                    if (graphNode.OutgoingNodes.Count <= 2)
+                    {
+                        corridorsCandidates.Add(graphNode);
+                    }
+                }
+            }
+
+            var corridors = new List<HashSet<GraphNode>>();
+            foreach (var corridorsCandidate in corridorsCandidates)
+            {
+                var neighborCorridors = corridors.Where(c => c.Intersect(corridorsCandidate.OutgoingNodes).Any()).ToList();
+
+                var newCorridor = new HashSet<GraphNode> {corridorsCandidate};
+                foreach (var neighborCorridor in neighborCorridors)
+                {
+                    foreach (var graphNode in neighborCorridor)
+                    {
+                        newCorridor.Add(graphNode);
+                    }
+
+                    corridors.Remove(neighborCorridor);
+                }
+
+                corridors.Add(newCorridor);
+            }
+
+            corridors.RemoveAll(c => c.Count < 2);
+            Corridors = corridors;
 
             Console.Error.WriteLine("Starting initialization of distance map");
             InitializeDistanceMap();
@@ -167,9 +289,6 @@ namespace MultiAgent.SearchClient
         public static void InitializeDistanceMap()
         {
             DistanceBetweenPositions = new Dictionary<(Position From, Position To), int>();
-
-            // Create graph representation of level in order to pre-analyze levle
-            var graph = new Graph();
 
             for (int firstPositionRow = 1; firstPositionRow < Walls.GetLength(0); firstPositionRow++)
             {
@@ -209,11 +328,15 @@ namespace MultiAgent.SearchClient
                                 continue;
                             }
 
-                            var startNode = graph.NodeGrid[firstPositionRow, firstPositionCol];
-                            var finishNode = graph.NodeGrid[secondPositionRow, secondPositionCol];
+                            var startNode = Graph.NodeGrid[firstPositionRow, firstPositionCol];
+                            var finishNode = Graph.NodeGrid[secondPositionRow, secondPositionCol];
+                            if (startNode == null || finishNode == null)
+                            {
+                                continue;
+                            }
 
                             var distance = UseBfs
-                                ? graph.BFS(startNode, finishNode)
+                                ? Graph.BFS(startNode, finishNode)
                                 : Math.Abs(firstPositionRow - secondPositionRow) +
                                   Math.Abs(firstPositionCol - secondPositionCol);
 

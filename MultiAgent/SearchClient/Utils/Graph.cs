@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,25 +7,24 @@ namespace MultiAgent.SearchClient.Utils
     public class Graph
     {
         public readonly GraphNode[,] NodeGrid;
-        public HashSet<GraphNode> Nodes = new();
 
         public Graph()
         {
             NodeGrid = new GraphNode[Level.Rows, Level.Columns];
 
-            for (var row = 1; row < Level.Rows; row++)
+            for (var row = 0; row < Level.Rows; row++)
             {
-                for (var column = 1; column < Level.Columns; column++)
+                for (var column = 0; column < Level.Columns; column++)
                 {
-                    if (Level.Walls[row, column])
+                    if (Level.OutsideWorld[row, column] || Level.Walls[row, column])
                     {
                         continue;
                     }
 
-                    GraphNode graphNode = new GraphNode(row, column);
-                    
+                    var graphNode = new GraphNode(row, column);
+
                     GraphNode neighborGraphNode;
-                    if (row > 1)
+                    if (row > 0)
                     {
                         neighborGraphNode = NodeGrid[row - 1, column];
                         if (neighborGraphNode != null)
@@ -33,8 +33,8 @@ namespace MultiAgent.SearchClient.Utils
                             neighborGraphNode.AddOutgoingNode(graphNode);
                         }
                     }
-                    
-                    if (column > 1)
+
+                    if (column > 0)
                     {
                         neighborGraphNode = NodeGrid[row, column - 1];
                         if (neighborGraphNode != null)
@@ -45,11 +45,10 @@ namespace MultiAgent.SearchClient.Utils
                     }
 
                     NodeGrid[row, column] = graphNode;
-                    Nodes.Add(graphNode);
                 }
             }
         }
-        
+
         public int BFS(GraphNode startNode, GraphNode finishNode)
         {
             Queue<GraphNode> queue = new();
@@ -103,6 +102,26 @@ namespace MultiAgent.SearchClient.Utils
         public void AddOutgoingNode(GraphNode graphNode)
         {
             OutgoingNodes.Add(graphNode);
+        }
+
+        public bool Equals(GraphNode other)
+        {
+            return Row == other.Row && Column == other.Column;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is GraphNode graphNode && Equals(graphNode);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Row, Column);
+        }
+
+        public override string ToString()
+        {
+            return $"({Row},{Column})";
         }
     }
 }
