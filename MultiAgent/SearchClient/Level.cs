@@ -14,6 +14,9 @@ namespace MultiAgent.SearchClient
         public static List<Box> BoxGoals;
         public static bool[,] Walls;
 
+        public static int WallCount = 0;
+        public static bool UseBfs => Rows * Columns - WallCount < 310;
+
         public static int Rows;
         public static int Columns;
 
@@ -105,6 +108,7 @@ namespace MultiAgent.SearchClient
                         {
                             // No agent can move the box - consider it a wall
                             walls[row, column] = true;
+                            WallCount += 1;
                             continue;
                         }
 
@@ -113,6 +117,7 @@ namespace MultiAgent.SearchClient
                     else if (c == '+')
                     {
                         walls[row, column] = true;
+                        WallCount += 1;
                     }
                 }
             }
@@ -207,7 +212,10 @@ namespace MultiAgent.SearchClient
                             var startNode = graph.NodeGrid[firstPositionRow, firstPositionCol];
                             var finishNode = graph.NodeGrid[secondPositionRow, secondPositionCol];
 
-                            var distance = graph.BFS(startNode, finishNode);
+                            var distance = UseBfs
+                                ? graph.BFS(startNode, finishNode)
+                                : Math.Abs(firstPositionRow - secondPositionRow) +
+                                  Math.Abs(firstPositionCol - secondPositionCol);
 
                             DistanceBetweenPositions.Add((positionFrom, positionTo), distance);
                             DistanceBetweenPositions.Add((positionTo, positionFrom), distance);
