@@ -20,6 +20,11 @@ namespace MultiAgent.SearchClient
             return _initialPosition;
         }
 
+        public override string ToString()
+        {
+            return $"{Letter}. Initial pos: ({_initialPosition.Row},{_initialPosition.Column})";
+        }
+
         // DO NOT OVERWRITE EQUALS && HASHCODE!!
         // TWO BOXES SHOULD ONLY BE EQUAL ON SAME REFERENCE
     }

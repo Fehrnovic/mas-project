@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient
@@ -98,7 +99,16 @@ namespace MultiAgent.SearchClient
                     }
                     else if ('A' <= c && c <= 'Z')
                     {
-                        boxes.Add(new Box(c, boxColors[c], new Position(row, column)));
+                        var boxColor = boxColors[c];
+
+                        if (!agentColors.Values.Contains(boxColor))
+                        {
+                            // No agent can move the box - consider it a wall
+                            walls[row, column] = true;
+                            continue;
+                        }
+
+                        boxes.Add(new Box(c, boxColor, new Position(row, column)));
                     }
                     else if (c == '+')
                     {
@@ -186,13 +196,13 @@ namespace MultiAgent.SearchClient
                                 continue;
                             }
 
-                                // If positions equal - distance between them = 0
-                                if (positionFrom.Equals(positionTo))
-                                {
-                                    DistanceBetweenPositions.Add((positionFrom, positionTo), 0);
+                            // If positions equal - distance between them = 0
+                            if (positionFrom.Equals(positionTo))
+                            {
+                                DistanceBetweenPositions.Add((positionFrom, positionTo), 0);
 
-                                    continue;
-                                }
+                                continue;
+                            }
 
                             var startNode = graph.NodeGrid[firstPositionRow, firstPositionCol];
                             var finishNode = graph.NodeGrid[secondPositionRow, secondPositionCol];
