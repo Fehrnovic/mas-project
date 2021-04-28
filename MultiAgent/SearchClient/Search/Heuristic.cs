@@ -8,19 +8,19 @@ namespace MultiAgent.SearchClient.Search
 {
     public class Heuristic
     {
-        public Heuristic(State initialState)
+        public Heuristic(SAState initialSaState)
         {
         }
 
-        public int CalculateHeuristic(State state)
+        public int CalculateHeuristic(SAState saState)
         {
-            var agentDistance = state.AgentGoal == null
+            var agentDistance = saState.AgentGoal == null
                 ? 0
-                : Level.DistanceBetweenPositions[(state.AgentPosition, state.AgentGoal.GetInitialLocation())];
+                : Level.DistanceBetweenPositions[(saState.AgentPosition, saState.AgentGoal.GetInitialLocation())];
 
-            // var goalCount = state.BoxGoals.Count(boxGoal =>
+            // var goalCount = saState.BoxGoals.Count(boxGoal =>
             // {
-            //     if (state.PositionsOfBoxes.TryGetValue(boxGoal.GetInitialLocation(), out var box))
+            //     if (saState.PositionsOfBoxes.TryGetValue(boxGoal.GetInitialLocation(), out var box))
             //     {
             //         return box.Letter != boxGoal.Letter;
             //     }
@@ -30,12 +30,12 @@ namespace MultiAgent.SearchClient.Search
 
             var goalScore = 0;
 
-            foreach (var goal in state.BoxGoals)
+            foreach (var goal in saState.BoxGoals)
             {
                 // Goal is complete
-                if (state.BoxAt(goal.GetInitialLocation()) != null)
+                if (saState.BoxAt(goal.GetInitialLocation()) != null)
                 {
-                    if (state.BoxAt(goal.GetInitialLocation()).Letter == goal.Letter)
+                    if (saState.BoxAt(goal.GetInitialLocation()).Letter == goal.Letter)
                     {
                         continue;
                     }
@@ -44,10 +44,10 @@ namespace MultiAgent.SearchClient.Search
                 }
 
                 
-                foreach (var box in state.PositionsOfBoxes.Where(b => b.Value.Letter == goal.Letter))
+                foreach (var box in saState.PositionsOfBoxes.Where(b => b.Value.Letter == goal.Letter))
                 {
                     // Box placed correctly already
-                    if (state.BoxGoals.Exists(g => g.Letter == box.Value.Letter && g.GetInitialLocation().Equals(box.Key)))
+                    if (saState.BoxGoals.Exists(g => g.Letter == box.Value.Letter && g.GetInitialLocation().Equals(box.Key)))
                     {
                         // Disregard box
                         continue;

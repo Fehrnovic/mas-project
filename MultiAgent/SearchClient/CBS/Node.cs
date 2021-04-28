@@ -7,7 +7,7 @@ namespace MultiAgent.SearchClient.CBS
     public class Node
     {
         public HashSet<Constraint> Constraints = new();
-        public Dictionary<Agent, List<Step>> Solution;
+        public Dictionary<Agent, List<SAStep>> Solution;
         public int Cost => CalculateCost();
 
         private int CalculateCost()
@@ -39,7 +39,7 @@ namespace MultiAgent.SearchClient.CBS
                 var maxIterations = maxSolutionLength - solution.Count;
                 for (var i = 0; i < maxIterations; i++)
                 {
-                    solution.Add(new Step(lastElement.Positions, null));
+                    solution.Add(new SAStep(lastElement.Positions, null));
                 }
             }
 
@@ -106,7 +106,7 @@ namespace MultiAgent.SearchClient.CBS
             return null;
         }
 
-        public Dictionary<Agent, List<Step>> CloneSolution()
+        public Dictionary<Agent, List<SAStep>> CloneSolution()
         {
             return Solution.ToDictionary(
                 x => x.Key,

@@ -5,26 +5,26 @@ namespace MultiAgent.SearchClient.Search
 {
     public interface IFrontier
     {
-        void Add(State state);
-        State Pop();
+        void Add(SAState saState);
+        SAState Pop();
         bool IsEmpty();
         int Size();
-        bool Contains(State state);
+        bool Contains(SAState saState);
         string GetName();
     }
 
     public class BFSFrontier : IFrontier
     {
-        public readonly Queue<State> Queue = new();
-        public readonly HashSet<State> Set = new();
+        public readonly Queue<SAState> Queue = new();
+        public readonly HashSet<SAState> Set = new();
 
-        public void Add(State state)
+        public void Add(SAState saState)
         {
-            Queue.Enqueue(state);
-            Set.Add(state);
+            Queue.Enqueue(saState);
+            Set.Add(saState);
         }
 
-        public State Pop()
+        public SAState Pop()
         {
             var state = Queue.Dequeue();
             Set.Remove(state);
@@ -42,9 +42,9 @@ namespace MultiAgent.SearchClient.Search
             return Queue.Count;
         }
 
-        public bool Contains(State state)
+        public bool Contains(SAState saState)
         {
-            return Set.Contains(state);
+            return Set.Contains(saState);
         }
 
         public string GetName()
@@ -56,8 +56,8 @@ namespace MultiAgent.SearchClient.Search
 
     public class BestFirstFrontier : IFrontier
     {
-        public readonly Dictionary<int, Queue<State>> Map = new();
-        public readonly HashSet<State> Set = new();
+        public readonly Dictionary<int, Queue<SAState>> Map = new();
+        public readonly HashSet<SAState> Set = new();
 
         private readonly Heuristic Heuristic;
 
@@ -66,33 +66,33 @@ namespace MultiAgent.SearchClient.Search
             Heuristic = heuristic;
         }
 
-        public void Add(State state)
+        public void Add(SAState saState)
         {
-            int score = Heuristic.CalculateHeuristic(state);
+            int score = Heuristic.CalculateHeuristic(saState);
 
             if (!Map.ContainsKey(score))
             {
-                Map.Add(score, new Queue<State>());
+                Map.Add(score, new Queue<SAState>());
             }
 
-            Map[score].Enqueue(state);
-            Set.Add(state);
+            Map[score].Enqueue(saState);
+            Set.Add(saState);
         }
 
-        public State Pop()
+        public SAState Pop()
         {
             int minScore = Map.Keys.Min();
 
-            State state = Map[minScore].Dequeue();
+            SAState saState = Map[minScore].Dequeue();
 
             if (!Map[minScore].Any())
             {
                 Map.Remove(minScore);
             }
 
-            Set.Remove(state);
+            Set.Remove(saState);
 
-            return state;
+            return saState;
         }
 
         public bool IsEmpty()
@@ -105,9 +105,9 @@ namespace MultiAgent.SearchClient.Search
             return Set.Count;
         }
 
-        public bool Contains(State state)
+        public bool Contains(SAState saState)
         {
-            return Set.Contains(state);
+            return Set.Contains(saState);
         }
 
         public string GetName()

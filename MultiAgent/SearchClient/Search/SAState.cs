@@ -7,7 +7,7 @@ using MultiAgent.SearchClient.CBS;
 
 namespace MultiAgent.SearchClient.Search
 {
-    public class State
+    public class SAState
     {
         public Agent Agent;
         public Position AgentPosition;
@@ -16,18 +16,18 @@ namespace MultiAgent.SearchClient.Search
         public List<Box> Boxes;
         public List<Box> BoxGoals;
 
-        // State information
+        // SAState information
         public readonly Dictionary<Position, Box> PositionsOfBoxes;
 
         public Action Action;
 
-        public State Parent;
+        public SAState Parent;
         public int Time;
         public HashSet<Constraint> Constraints;
 
         private int Hash = 0;
 
-        public State(Agent agent, Agent agentGoal, List<Box> boxes, List<Box> boxGoals,
+        public SAState(Agent agent, Agent agentGoal, List<Box> boxes, List<Box> boxGoals,
             HashSet<Constraint> constraints)
         {
             Agent = agent;
@@ -46,7 +46,7 @@ namespace MultiAgent.SearchClient.Search
             Constraints = constraints.Where(c => c.Agent == Agent).ToHashSet();
         }
 
-        public State(State parent, Action action)
+        public SAState(SAState parent, Action action)
         {
             Parent = parent;
             Action = action;
@@ -134,16 +134,16 @@ namespace MultiAgent.SearchClient.Search
             }
         }
 
-        public List<State> GetExpandedStates()
+        public List<SAState> GetExpandedStates()
         {
             // Determine list of applicable actions for the agent
-            List<State> reachableStates = new(16);
+            List<SAState> reachableStates = new(16);
 
             foreach (var action in Action.AllActions)
             {
                 if (IsApplicable(action))
                 {
-                    var state = new State(this, action);
+                    var state = new SAState(this, action);
 
                     if (state.ConstraintsSatisfied())
                     {
@@ -257,7 +257,7 @@ namespace MultiAgent.SearchClient.Search
             return PositionsOfBoxes.TryGetValue(position, out var box) ? box : null;
         }
 
-        public bool IsGoalState(HashSet<State> exploredStates)
+        public bool IsGoalState(HashSet<SAState> exploredStates)
         {
             var boxesCompleted = true;
             var agentCompleted = false;
@@ -339,7 +339,7 @@ namespace MultiAgent.SearchClient.Search
 
         public override bool Equals(object obj)
         {
-            if (obj is not State state)
+            if (obj is not SAState state)
             {
                 return false;
             }

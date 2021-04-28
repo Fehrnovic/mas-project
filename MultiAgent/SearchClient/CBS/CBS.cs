@@ -23,7 +23,7 @@ namespace MultiAgent.SearchClient.CBS
             var root = new Node
             {
                 Constraints = new HashSet<Constraint>(),
-                Solution = new Dictionary<Agent, List<Step>>(),
+                Solution = new Dictionary<Agent, List<SAStep>>(),
             };
 
             var agentToBoxGoalDictionary = new Dictionary<Agent, List<Box>>(Level.Agents.Count);
@@ -72,7 +72,7 @@ namespace MultiAgent.SearchClient.CBS
             {
                 var agentGoal = Level.AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number);
                 var boxesMatchingAgent = Level.Boxes.Where(b => b.Color == agent.Color).ToList();
-                var state = new State(agent, agentGoal, agentToBoxDictionary[agent], agentToBoxGoalDictionary[agent],
+                var state = new SAState(agent, agentGoal, agentToBoxDictionary[agent], agentToBoxGoalDictionary[agent],
                     root.Constraints);
                 root.Solution[agent] =
                     GraphSearch.Search(state, new BestFirstFrontier(new Heuristic(state)));
@@ -155,7 +155,7 @@ namespace MultiAgent.SearchClient.CBS
                     var agentGoal = Level.AgentGoals.FirstOrDefault(ag => ag.Number == conflictedAgent.Number);
                     var boxesMatchingAgent = Level.Boxes.Where(b => b.Color == conflictedAgent.Color).ToList();
 
-                    var state = new State(conflictedAgent, agentGoal, agentToBoxDictionary[conflictedAgent],
+                    var state = new SAState(conflictedAgent, agentGoal, agentToBoxDictionary[conflictedAgent],
                         agentToBoxGoalDictionary[conflictedAgent], A.Constraints);
                     A.Solution[conflictedAgent] =
                         GraphSearch.Search(state, new BestFirstFrontier(new Heuristic(state)));
