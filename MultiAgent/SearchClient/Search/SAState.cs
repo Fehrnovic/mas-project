@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using MultiAgent.SearchClient.Utils;
 using MultiAgent.SearchClient.CBS;
+using MultiAgent.searchClient.Search;
 
 namespace MultiAgent.SearchClient.Search
 {
-    public class SAState
+    public class SAState : IState
     {
         public Agent Agent;
         public Position AgentPosition;
@@ -134,7 +135,7 @@ namespace MultiAgent.SearchClient.Search
             }
         }
 
-        public List<SAState> GetExpandedStates()
+        public IEnumerable<IState> GetExpandedStates()
         {
             // Determine list of applicable actions for the agent
             List<SAState> reachableStates = new(16);
@@ -167,7 +168,7 @@ namespace MultiAgent.SearchClient.Search
 
         public List<Position> GetStatePositions()
         {
-            var positions = new List<Position> {AgentPosition};
+            var positions = new List<Position> { AgentPosition };
             positions.AddRange(PositionsOfBoxes.Keys);
 
             return positions;
@@ -257,10 +258,9 @@ namespace MultiAgent.SearchClient.Search
             return PositionsOfBoxes.TryGetValue(position, out var box) ? box : null;
         }
 
-        public bool IsGoalState(HashSet<SAState> exploredStates)
+        public bool IsGoalState(HashSet<IState> exploredStates)
         {
             var boxesCompleted = true;
-            var agentCompleted = false;
 
             foreach (var boxGoal in BoxGoals)
             {
@@ -290,17 +290,17 @@ namespace MultiAgent.SearchClient.Search
             return false;
         }
 
-        public List<Step> ExtractPlan()
+        public IEnumerable<IStep> ExtractPlan()
         {
-            var plan = new Step[Time + 1];
+            var plan = new SAStep[Time + 1];
             var state = this;
             while (state.Action != null)
             {
-                plan[state.Time] = new Step(state);
+                plan[state.Time] = new SAStep(state);
                 state = state.Parent;
             }
 
-            plan[0] = new Step(state);
+            plan[0] = new SAStep(state);
 
             return plan.ToList();
         }
@@ -345,18 +345,16 @@ namespace MultiAgent.SearchClient.Search
             }
 
 
-            var boxesEqual = true;
-
             foreach (var (boxPosition, box) in PositionsOfBoxes)
             {
                 if (!state.PositionsOfBoxes.TryGetValue(boxPosition, out var box2))
                 {
-                    boxesEqual = false;
+                    return false;
                 }
 
                 if (box != box2)
                 {
-                    boxesEqual = false;
+                    return false;
                 }
             }
 
@@ -367,8 +365,7 @@ namespace MultiAgent.SearchClient.Search
 
             var isEqual = AgentPosition == state.AgentPosition
                           && constraints.Count == constraints2.Count
-                          && !constraints.Except(constraints2).Any()
-                          && boxesEqual;
+                          && !constraints.Except(constraints2).Any();
 
             return isEqual;
         }

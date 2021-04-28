@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using MultiAgent.SearchClient.Utils;
 using MultiAgent.SearchClient.CBS;
+using MultiAgent.searchClient.Search;
 
 namespace MultiAgent.SearchClient.Search
 {
-    public class MAState
+    public class MAState : IState
     {
         public List<Agent> Agents;
         public List<Agent> AgentGoals;
@@ -20,7 +21,7 @@ namespace MultiAgent.SearchClient.Search
         public readonly Dictionary<Position, Agent> PositionsOfAgents;
         public readonly Dictionary<Position, Box> PositionsOfBoxes;
 
-        public List<Action> JointActions;
+        public Dictionary<Agent, Action> JointActions;
 
         public MAState Parent;
         public int Time;
@@ -53,11 +54,16 @@ namespace MultiAgent.SearchClient.Search
 
             Constraints = constraints;
         }
-        
-        public MAState(MAState parent, List<Action> jointActions)
+
+        public MAState(MAState parent, Dictionary<Agent, Action> jointActions)
         {
             Parent = parent;
-            JointActions = jointActions;
+            JointActions = new Dictionary<Agent, Action>();
+            foreach (var agent in jointActions.Keys)
+            {
+                JointActions[agent] = new Action(jointActions[agent]);
+            }
+
             Time = parent.Time + 1;
             Constraints = parent.Constraints;
 
@@ -81,7 +87,7 @@ namespace MultiAgent.SearchClient.Search
 
             foreach (var agent in Agents)
             {
-                var agentAction = jointActions[agent.Number];
+                var agentAction = jointActions[agent];
 
                 Position agentPosition;
                 Box box;
@@ -179,7 +185,7 @@ namespace MultiAgent.SearchClient.Search
             }
         }
 
-        public List<State> GetExpandedStates()
+        public IEnumerable<IState> GetExpandedStates()
         {
             // Determine list of applicable actions for each individual agent.
             var applicableActions = new Dictionary<Agent, List<Action>>(Agents.Count);
@@ -198,19 +204,19 @@ namespace MultiAgent.SearchClient.Search
             }
 
             // Iterate over joint actions, check conflict and generate child states.
-            var jointAction = new Action[Agents.Count];
+            var jointAction = new Dictionary<Agent, Action>();
             var actionsPermutation = new int[Agents.Count];
-            var expandedStates = new List<State>(32);
+            var expandedStates = new List<MAState>(32);
             while (true)
             {
                 foreach (var agent in Agents)
                 {
-                    jointAction[agent.Number] = applicableActions[agent][actionsPermutation[agent.Number]];
+                    jointAction[agent] = applicableActions[agent][actionsPermutation[agent.Number]];
                 }
 
                 if (!IsConflicting(jointAction))
                 {
-                    expandedStates.Add(new State(this, jointAction));
+                    expandedStates.Add(new MAState(this, jointAction));
                 }
 
                 // Advance permutation
@@ -255,7 +261,8 @@ namespace MultiAgent.SearchClient.Search
 
         public List<Position> GetStatePositions()
         {
-            var positions = new List<Position> {AgentPosition};
+            var positions = new List<Position>();
+            positions.AddRange(PositionsOfAgents.Keys);
             positions.AddRange(PositionsOfBoxes.Keys);
 
             return positions;
@@ -351,7 +358,7 @@ namespace MultiAgent.SearchClient.Search
             }
         }
 
-        private bool IsConflicting(Action[] jointActions)
+        private bool IsConflicting(Dictionary<Agent, Action> jointActions)
         {
             var destinationRows = new int[Agents.Count]; // row of new cell to become occupied by action
             var destinationColumns = new int[Agents.Count]; // column of new cell to become occupied by action
@@ -360,7 +367,7 @@ namespace MultiAgent.SearchClient.Search
 
             foreach (var agent in Agents)
             {
-                var action = jointActions[agent.Number];
+                var action = jointActions[agent];
                 int boxRow;
                 int boxColumn;
                 Position agentPosition;
@@ -412,29 +419,31 @@ namespace MultiAgent.SearchClient.Search
                 }
             }
 
-            for (var agent1 = 0; agent1 < Agents.Count; ++agent1)
+            for (var agent1Number = 0; agent1Number < Agents.Count; ++agent1Number)
             {
+                var agent1 = Agents.First(a => a.Number == agent1Number);
                 if (jointActions[agent1].Type == ActionType.NoOp)
                 {
                     continue;
                 }
 
-                for (var agent2 = agent1 + 1; agent2 < Agents.Count; ++agent2)
+                for (var agent2Number = agent1Number + 1; agent2Number < Agents.Count; ++agent2Number)
                 {
+                    var agent2 = Agents.First(a => a.Number == agent2Number);
                     if (jointActions[agent2].Type == ActionType.NoOp)
                     {
                         continue;
                     }
 
                     // Agents or boxes moving into same cell?
-                    if (destinationRows[agent1] == destinationRows[agent2] &&
-                        destinationColumns[agent1] == destinationColumns[agent2])
+                    if (destinationRows[agent1Number] == destinationRows[agent2Number] &&
+                        destinationColumns[agent1Number] == destinationColumns[agent2Number])
                     {
                         return true;
                     }
 
                     // Agents moving the same box?
-                    if (boxRows[agent1] == boxRows[agent2] && boxColumns[agent1] == boxColumns[agent2])
+                    if (boxRows[agent1Number] == boxRows[agent2Number] && boxColumns[agent1Number] == boxColumns[agent2Number])
                     {
                         return true;
                     }
@@ -466,7 +475,21 @@ namespace MultiAgent.SearchClient.Search
             return PositionsOfBoxes.TryGetValue(position, out var box) ? box : null;
         }
 
-        public bool IsGoalState()
+        private bool AllAgentsPlacedCorrectly()
+        {
+            foreach (var agent in Agents)
+            {
+                var agentGoal = AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number);
+                if (agentGoal != null && PositionOfAgent(agent) != agentGoal.GetInitialLocation())
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public bool IsGoalState(HashSet<IState> exploredStates)
         {
             foreach (var agentGoal in AgentGoals)
             {
@@ -495,44 +518,33 @@ namespace MultiAgent.SearchClient.Search
             }
 
             return true;
+
         }
 
-        public List<SAStep> ExtractPlan()
+        public IEnumerable<IStep> ExtractPlan()
         {
-            var plan = new SAStep[Time + 1];
-            var state = this;
-            while (state.Action != null)
-            {
-                plan[state.Time] = new SAStep(state);
-                state = state.Parent;
-            }
-
-            plan[0] = new SAStep(state);
-
-            return plan.ToList();
-        }
-
-        public Action[][] ExtractPlan()
-        {
-            var plan = new Action[Depth][];
+            var plan = new MAStep[Time + 1];
             var state = this;
             while (state.JointActions != null)
             {
-                plan[state.Depth - 1] = state.JointActions;
+                plan[state.Time] = new MAStep(state);;
                 state = state.Parent;
             }
 
-            return plan;
+            plan[0] = new MAStep(state);
+
+            return plan.ToList();
         }
 
         public override string ToString()
         {
             var s = new StringBuilder();
-            for (var row = 0; row < Level.Rows; row++)
+            for (var row = 0; row < Level.Walls.GetLength(0); row++)
             {
-                for (var column = 0; column < Level.Columns; column++)
+                for (var column = 0; column < Level.Walls.GetLength(1); column++)
                 {
                     var box = BoxAt(new Position(row, column));
+                    var agent = AgentAt(new Position(row, column));
                     if (box != null)
                     {
                         s.Append(box.Letter);
@@ -541,9 +553,9 @@ namespace MultiAgent.SearchClient.Search
                     {
                         s.Append('+');
                     }
-                    else if (AgentPosition.Row == row && AgentPosition.Column == column)
+                    else if (agent != null)
                     {
-                        s.Append(Agent.Number);
+                        s.Append(agent.Number);
                     }
                     else
                     {
@@ -564,33 +576,41 @@ namespace MultiAgent.SearchClient.Search
                 return false;
             }
 
-
-            var boxesEqual = true;
-
-            foreach (var (boxPosition, box) in PositionsOfBoxes)
+            foreach (var (agent, agentPosition) in AgentPositions)
             {
-                if (!state.PositionsOfBoxes.TryGetValue(boxPosition, out var box2))
+                if (!state.PositionsOfAgents.TryGetValue(agentPosition, out var agent2))
                 {
-                    boxesEqual = false;
+                    return false;
                 }
 
-                if (box != box2)
+                if (agent != agent2)
                 {
-                    boxesEqual = false;
+                    return false;
                 }
             }
 
+            //foreach (var (boxPosition, box) in PositionsOfBoxes)
+            //{
+            //    if (!state.PositionsOfBoxes.TryGetValue(boxPosition, out var box2))
+            //    {
+            //        return false;
+            //    }
+
+            //    if (box != box2)
+            //    {
+            //        return false;
+            //    }
+            //}
+
             // TODO: Optimization 
             // return AgentPosition == state.AgentPosition && Time == state.Time;
-            var constraints = GetRelevantConstraints();
-            var constraints2 = state.GetRelevantConstraints();
+            //var constraints = GetRelevantConstraints();
+            //var constraints2 = state.GetRelevantConstraints();
 
-            var isEqual = AgentPosition == state.AgentPosition
-                          && constraints.Count == constraints2.Count
-                          && !constraints.Except(constraints2).Any()
-                          && boxesEqual;
+            //var isEqual = constraints.Count == constraints2.Count
+            //              && !constraints.Except(constraints2).Any();
 
-            return isEqual;
+            return true;
         }
 
         public override int GetHashCode()
@@ -603,13 +623,14 @@ namespace MultiAgent.SearchClient.Search
             var prime = 31;
             var result = 1;
 
-            result = prime * result +
-                     ((AgentPosition.Row + 1) * 21 + (AgentPosition.Column + 1) * 32) * (Agent.Number + 1);
+            foreach (var (agentPosition, agent) in PositionsOfAgents)
+            {
+                result = prime * result + (((agentPosition.Row + 1) * 21) * Agents.Count + (agentPosition.Column + 1) * 32) * (agent.Number + 1);
+            }
 
             foreach (var (boxPosition, box) in PositionsOfBoxes)
             {
-                result = prime * result + (((boxPosition.Row + 1) * 41) * Level.Rows + (boxPosition.Column + 1) * 62) *
-                    box.Letter;
+                result = prime * result + (((boxPosition.Row + 1) * 41) * Level.Walls.GetLength(0) + (boxPosition.Column + 1) * 62) * box.Letter;
             }
 
             Hash = result;

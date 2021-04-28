@@ -7,7 +7,11 @@ using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.Search
 {
-    public class SAStep
+    public interface IStep
+    {
+        public List<Position> Positions { get; set; }
+    }
+    public class SAStep : IStep
     {
         public List<Position> Positions { get; set; }
         public Action Action { get; set; }
@@ -26,7 +30,7 @@ namespace MultiAgent.SearchClient.Search
         }
     }
 
-    public class MAStep
+    public class MAStep : IStep
     {
         public List<Position> Positions { get; set; }
         public Dictionary<Agent, Action> JointActions { get; set; }

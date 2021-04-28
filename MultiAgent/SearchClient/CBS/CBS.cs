@@ -23,12 +23,12 @@ namespace MultiAgent.SearchClient.CBS
             var root = new Node
             {
                 Constraints = new HashSet<Constraint>(),
-                Solution = new Dictionary<Agent, List<SAStep>>(),
+                Solution = new Dictionary<Agent, List<IStep>>(),
             };
 
             var agentToBoxGoalDictionary = new Dictionary<Agent, List<Box>>(Level.Agents.Count);
             var agentToBoxDictionary = new Dictionary<Agent, List<Box>>(Level.Agents.Count);
-            
+
             foreach (var agent in Level.Agents)
             {
                 agentToBoxGoalDictionary.Add(agent, new List<Box>());
@@ -74,11 +74,10 @@ namespace MultiAgent.SearchClient.CBS
                 var boxesMatchingAgent = Level.Boxes.Where(b => b.Color == agent.Color).ToList();
                 var state = new SAState(agent, agentGoal, agentToBoxDictionary[agent], agentToBoxGoalDictionary[agent],
                     root.Constraints);
-                root.Solution[agent] =
-                    GraphSearch.Search(state, new BestFirstFrontier(new Heuristic(state)));
+                root.Solution[agent] = GraphSearch.Search(state, new BestFirstFrontier()).ToList();
             }
 
-            OPEN.Add(root.Cost, new Queue<Node>(new[] {root}));
+            OPEN.Add(root.Cost, new Queue<Node>(new[] { root }));
             exploredNodes.Add(root);
 
             while (OPEN.Any())
@@ -104,7 +103,8 @@ namespace MultiAgent.SearchClient.CBS
                     var actions = new List<List<Action>>();
                     foreach (var agent in Level.Agents.OrderBy(a => a.Number))
                     {
-                        actions.Add(P.Solution[agent].Select(s => s.Action).ToList());
+                        actions.Add(P.Solution[agent].Select(s => ((SAStep)s).Action).ToList());
+
                     }
 
                     return actions;
@@ -158,7 +158,7 @@ namespace MultiAgent.SearchClient.CBS
                     var state = new SAState(conflictedAgent, agentGoal, agentToBoxDictionary[conflictedAgent],
                         agentToBoxGoalDictionary[conflictedAgent], A.Constraints);
                     A.Solution[conflictedAgent] =
-                        GraphSearch.Search(state, new BestFirstFrontier(new Heuristic(state)));
+                        GraphSearch.Search(state, new BestFirstFrontier()).ToList();
 
                     if (A.Solution[conflictedAgent] != null)
                     {

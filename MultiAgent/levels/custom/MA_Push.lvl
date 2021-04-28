@@ -1,22 +1,21 @@
 #domain
 hospital
 #levelname
-MA_Push
+MA_Corridor_Simple
 #colors
-blue: 0, A
-green: 1, B
+blue: 0, 1
 #initial
-+++++++
-+0A B1+
-+++ +++
-+++ +++
-+++ +++
-+++++++
+++++
++1++
++  +
++ ++
++0++
+++++
 #goal
-+++++++
-+     +
-+++ +++
-+++A+++
-+++B+++
-+++++++
+++++
++0++
++  +
++ ++
++1++
+++++
 #end

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using MultiAgent.searchClient.Search;
 using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.Search
@@ -11,14 +12,14 @@ namespace MultiAgent.SearchClient.Search
         
         public static readonly Stopwatch Timer = new();
 
-        public static List<SAStep> Search(SAState initialSaState, IFrontier frontier)
+        public static IEnumerable<IStep> Search(IState initialState, IFrontier frontier)
         {
             Timer.Restart();
             
             var iterations = 0;
 
-            frontier.Add(initialSaState);
-            var exploredStates = new HashSet<SAState>();
+            frontier.Add(initialState);
+            var exploredStates = new HashSet<IState>();
 
             while (true)
             {
@@ -63,7 +64,7 @@ namespace MultiAgent.SearchClient.Search
             }
         }
 
-        private static void PrintSearchStatus(HashSet<SAState> exploredStates, IFrontier frontier)
+        private static void PrintSearchStatus(HashSet<IState> exploredStates, IFrontier frontier)
         {
             var elapsedTime = (Timer.ElapsedMilliseconds) / 1000.0;
             Console.Error.WriteLine(

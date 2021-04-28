@@ -7,20 +7,20 @@ namespace MultiAgent.SearchClient.CBS
     public class Node
     {
         public HashSet<Constraint> Constraints = new();
-        public Dictionary<Agent, List<SAStep>> Solution;
+        public Dictionary<Agent, List<IStep>> Solution;
         public int Cost => CalculateCost();
 
         private int CalculateCost()
         {
             return Solution.Values.Max(l => l.Count) + Constraints.Count;
             // return Solution.Values.Aggregate(0, (current, solution) => current + solution.Count);
-            var sum = 0;
-            foreach (var solution in Solution.Values)
-            {
-                sum += solution.Count - 1;
-            }
+            //var sum = 0;
+            //foreach (var solution in Solution.Values)
+            //{
+            //    sum += solution.Count - 1;
+            //}
 
-            return sum;
+            //return sum;
         }
 
         public IConflict GetConflict()
@@ -106,7 +106,7 @@ namespace MultiAgent.SearchClient.CBS
             return null;
         }
 
-        public Dictionary<Agent, List<SAStep>> CloneSolution()
+        public Dictionary<Agent, List<IStep>> CloneSolution()
         {
             return Solution.ToDictionary(
                 x => x.Key,

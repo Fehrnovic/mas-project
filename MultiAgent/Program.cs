@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -31,7 +32,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("custom/MA_Simple_Delegate.lvl");
+            Level.ParseLevel("custom/MA_Push.lvl");
 
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
@@ -39,6 +40,9 @@ namespace MultiAgent
             // GraphSearch.OutputProgress = true;
 
             Timer.Restart();
+
+            var initialState = new MAState(Level.Agents, Level.AgentGoals, Level.Boxes, Level.BoxGoals, new HashSet<Constraint>());
+            var test = GraphSearch.Search(initialState, new BestFirstFrontier());
             
             var solution = CBS.Run();
             
