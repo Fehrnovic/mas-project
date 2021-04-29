@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MultiAgent.searchClient.Search;
@@ -59,21 +60,14 @@ namespace MultiAgent.SearchClient.Search
     {
         public readonly Dictionary<int, Queue<IState>> Map = new();
         public readonly HashSet<IState> Set = new();
-        
+
         public void Add(IState state)
         {
-            int score = 0;
-
-            switch (state)
+            var score = state switch
             {
-                case SAState s:
-                    score = Heuristic.CalculateHeuristicSA(s);
-                    break;
-
-                case MAState s:
-                    score = Heuristic.CalculateHeuristicMA(s);
-                    break;
-            }
+                SAState s => Heuristic.CalculateHeuristicSA(s),
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
             if (!Map.ContainsKey(score))
             {

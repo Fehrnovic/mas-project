@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +11,7 @@ namespace MultiAgent.SearchClient.Search
     {
         public List<Position> Positions { get; set; }
     }
+
     public class SAStep : IStep
     {
         public List<Position> Positions { get; set; }

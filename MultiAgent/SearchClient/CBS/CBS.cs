@@ -104,7 +104,6 @@ namespace MultiAgent.SearchClient.CBS
                     foreach (var agent in Level.Agents.OrderBy(a => a.Number))
                     {
                         actions.Add(P.Solution[agent].Select(s => ((SAStep)s).Action).ToList());
-
                     }
 
                     return actions;
