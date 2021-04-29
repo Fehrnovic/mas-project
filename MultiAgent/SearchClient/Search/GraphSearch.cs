@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using MultiAgent.searchClient.Search;
 using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.Search
@@ -9,13 +8,13 @@ namespace MultiAgent.SearchClient.Search
     public class GraphSearch
     {
         public static bool OutputProgress = false;
-        
+
         public static readonly Stopwatch Timer = new();
 
         public static IEnumerable<IStep> Search(IState initialState, IFrontier frontier)
         {
             Timer.Restart();
-            
+
             var iterations = 0;
 
             frontier.Add(initialState);
