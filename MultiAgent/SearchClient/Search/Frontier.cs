@@ -66,6 +66,7 @@ namespace MultiAgent.SearchClient.Search
             var score = state switch
             {
                 SAState s => Heuristic.CalculateHeuristicSA(s),
+                MAState s => Heuristic.CalculateHeuristicMA(s),
                 _ => throw new ArgumentOutOfRangeException()
             };
 

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using MultiAgent.SearchClient.Utils;
 using MultiAgent.SearchClient.CBS;
-using MultiAgent.searchClient.Search;
 
 namespace MultiAgent.SearchClient.Search
 {
@@ -602,7 +601,7 @@ namespace MultiAgent.SearchClient.Search
             //    }
             //}
 
-            // TODO: Optimization 
+            // TODO: Optimization
             // return AgentPosition == state.AgentPosition && Time == state.Time;
             //var constraints = GetRelevantConstraints();
             //var constraints2 = state.GetRelevantConstraints();
