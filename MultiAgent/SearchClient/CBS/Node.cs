@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using MultiAgent.SearchClient.Search;
 
 namespace MultiAgent.SearchClient.CBS
@@ -7,8 +8,10 @@ namespace MultiAgent.SearchClient.CBS
     public class Node
     {
         public HashSet<Constraint> Constraints = new();
-        public Dictionary<Agent, List<IStep>> Solution;
+        public Dictionary<IAgent, List<IStep>> Solution;
         public int Cost => CalculateCost();
+        public static int[,] CM = new int[Level.Agents.Count, Level.Agents.Count];
+        public static readonly int B = 10; 
 
         private int CalculateCost()
         {
@@ -21,6 +24,11 @@ namespace MultiAgent.SearchClient.CBS
             //}
 
             //return sum;
+        }
+
+        public static bool ShouldMerge(IAgent agent1, IAgent agent2)
+        {
+            return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
         }
 
         public IConflict GetConflict()
@@ -50,8 +58,11 @@ namespace MultiAgent.SearchClient.CBS
                 {
                     for (var agent2Index = agent1Index + 1; agent2Index < Solution.Keys.Count; agent2Index++)
                     {
-                        var (agent1, agent1Solution) = clonedSolution.ElementAt(agent1Index);
-                        var (agent2, agent2Solution) = clonedSolution.ElementAt(agent2Index);
+                        var (agent1Tmp, agent1Solution) = clonedSolution.ElementAt(agent1Index);
+                        var (agent2Tmp, agent2Solution) = clonedSolution.ElementAt(agent2Index);
+
+                        var agent1 = agent1Tmp.ReferenceAgent;
+                        var agent2 = agent2Tmp.ReferenceAgent;
 
                         // Check for PositionConflict
 
@@ -106,7 +117,7 @@ namespace MultiAgent.SearchClient.CBS
             return null;
         }
 
-        public Dictionary<Agent, List<IStep>> CloneSolution()
+        public Dictionary<IAgent, List<IStep>> CloneSolution()
         {
             return Solution.ToDictionary(
                 x => x.Key,

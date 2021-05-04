@@ -1,8 +1,14 @@
-﻿using MultiAgent.SearchClient.Utils;
+﻿using System.Collections.Generic;
+using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient
 {
-    public class Agent
+    public interface IAgent
+    {
+        Agent ReferenceAgent { get; }
+    }
+
+    public class Agent : IAgent
     {
         public readonly int Number;
         public readonly Color Color;
@@ -27,5 +33,13 @@ namespace MultiAgent.SearchClient
         {
             return $"{Number}";
         }
+
+        public Agent ReferenceAgent => this;
+    }
+
+    public class MetaAgent : IAgent
+    {
+        public List<Agent> Agents = new();
+        public Agent ReferenceAgent => Agents[0];
     }
 }
