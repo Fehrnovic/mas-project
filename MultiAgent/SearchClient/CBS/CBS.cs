@@ -156,8 +156,7 @@ namespace MultiAgent.SearchClient.CBS
 
                     var state = new SAState(conflictedAgent, agentGoal, agentToBoxDictionary[conflictedAgent],
                         agentToBoxGoalDictionary[conflictedAgent], A.Constraints);
-                    A.Solution[conflictedAgent] =
-                        GraphSearch.Search(state, new BestFirstFrontier()).ToList();
+                    A.Solution[conflictedAgent] = GraphSearch.Search(state, new BestFirstFrontier())?.ToList();
 
                     if (A.Solution[conflictedAgent] != null)
                     {
