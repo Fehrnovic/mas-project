@@ -4,9 +4,9 @@ set -e
 # Set the memory, frontier type, level, speed and timeout
 MEMORY="-Xmx16g"
 FRONTIER="-bfs"
-LEVEL="levels/custom/MA_Simple2.lvl"
+LEVEL="levels/MAthomasAppartment.lvl"
 SPEED=500
-TIMEOUT=1800000
+TIMEOUT=180
 
 # Set to 1 to enable debugging
 DEBUG=0

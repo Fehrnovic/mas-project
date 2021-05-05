@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using MultiAgent.SearchClient.CBS;
@@ -19,7 +20,6 @@ namespace MultiAgent.SearchClient
         public static List<HashSet<GraphNode>> Corridors;
 
         public static int WallCount = 0;
-        public static bool UseBfs => Rows * Columns - WallCount < 400;
 
         public static int Rows;
         public static int Columns;
@@ -261,7 +261,8 @@ namespace MultiAgent.SearchClient
             var corridors = new List<HashSet<GraphNode>>();
             foreach (var corridorsCandidate in corridorsCandidates)
             {
-                var neighborCorridors = corridors.Where(c => c.Intersect(corridorsCandidate.OutgoingNodes).Any()).ToList();
+                var neighborCorridors =
+                    corridors.Where(c => c.Intersect(corridorsCandidate.OutgoingNodes).Any()).ToList();
 
                 var newCorridor = new HashSet<GraphNode> {corridorsCandidate};
                 foreach (var neighborCorridor in neighborCorridors)
@@ -287,73 +288,99 @@ namespace MultiAgent.SearchClient
             Console.Error.WriteLine("Initialize delegation data");
             LevelDelegationHelper.InitializeDelegationData();
             Console.Error.WriteLine("Delegation data initialized");
-            
+
             LevelDelegationHelper.DelegateLevel();
             Console.Error.WriteLine("Level delegated");
         }
 
         public static Dictionary<(Position From, Position To), int> DistanceBetweenPositions = new();
 
+        public static int GetDistanceBetweenPosition(Position from, Position to)
+        {
+            // return Math.Abs(from.Row - to.Row) + Math.Abs(from.Column - to.Column);
+            if (from == to)
+            {
+                return 0;
+            }
+
+            if (DistanceBetweenPositions.ContainsKey((from, to)) ||
+                DistanceBetweenPositions.ContainsKey((to, from)))
+            {
+                var temp = DistanceBetweenPositions[(from, to)];
+                return temp;
+            }
+
+            var startNode = Graph.NodeGrid[from.Row, from.Column];
+            var finishNode = Graph.NodeGrid[to.Row, to.Column];
+
+            var distance = Graph.BFS(startNode, finishNode);
+
+            DistanceBetweenPositions.Add((from, to), distance);
+            DistanceBetweenPositions.Add((to, from), distance);
+
+            return distance;
+        }
+
         public static void InitializeDistanceMap()
         {
             DistanceBetweenPositions = new Dictionary<(Position From, Position To), int>();
 
-            for (int firstPositionRow = 1; firstPositionRow < Walls.GetLength(0); firstPositionRow++)
-            {
-                for (int firstPositionCol = 1; firstPositionCol < Walls.GetLength(1); firstPositionCol++)
-                {
-                    // For each cell in the level that is NOT a wall:
-                    if (Walls[firstPositionRow, firstPositionCol])
-                    {
-                        continue;
-                    }
-
-                    // Iterate over every other position
-                    for (int secondPositionRow = 1; secondPositionRow < Walls.GetLength(0); secondPositionRow++)
-                    {
-                        for (int secondPositionCol = 1; secondPositionCol < Walls.GetLength(1); secondPositionCol++)
-                        {
-                            // For each cell in the level that is NOT a wall:
-                            if (Walls[secondPositionRow, secondPositionCol])
-                            {
-                                continue;
-                            }
-
-                            var positionFrom = new Position(firstPositionRow, firstPositionCol);
-                            var positionTo = new Position(secondPositionRow, secondPositionCol);
-
-                            if (DistanceBetweenPositions.ContainsKey((positionFrom, positionTo)) ||
-                                DistanceBetweenPositions.ContainsKey((positionTo, positionFrom)))
-                            {
-                                continue;
-                            }
-
-                            // If positions equal - distance between them = 0
-                            if (positionFrom.Equals(positionTo))
-                            {
-                                DistanceBetweenPositions.Add((positionFrom, positionTo), 0);
-
-                                continue;
-                            }
-
-                            var startNode = Graph.NodeGrid[firstPositionRow, firstPositionCol];
-                            var finishNode = Graph.NodeGrid[secondPositionRow, secondPositionCol];
-                            if (startNode == null || finishNode == null)
-                            {
-                                continue;
-                            }
-
-                            var distance = UseBfs
-                                ? Graph.BFS(startNode, finishNode)
-                                : Math.Abs(firstPositionRow - secondPositionRow) +
-                                  Math.Abs(firstPositionCol - secondPositionCol);
-
-                            DistanceBetweenPositions.Add((positionFrom, positionTo), distance);
-                            DistanceBetweenPositions.Add((positionTo, positionFrom), distance);
-                        }
-                    }
-                }
-            }
+            // for (int firstPositionRow = 1; firstPositionRow < Walls.GetLength(0); firstPositionRow++)
+            // {
+            //     for (int firstPositionCol = 1; firstPositionCol < Walls.GetLength(1); firstPositionCol++)
+            //     {
+            //         // For each cell in the level that is NOT a wall:
+            //         if (Walls[firstPositionRow, firstPositionCol])
+            //         {
+            //             continue;
+            //         }
+            //
+            //         // Iterate over every other position
+            //         for (int secondPositionRow = 1; secondPositionRow < Walls.GetLength(0); secondPositionRow++)
+            //         {
+            //             for (int secondPositionCol = 1; secondPositionCol < Walls.GetLength(1); secondPositionCol++)
+            //             {
+            //                 // For each cell in the level that is NOT a wall:
+            //                 if (Walls[secondPositionRow, secondPositionCol])
+            //                 {
+            //                     continue;
+            //                 }
+            //
+            //                 var positionFrom = new Position(firstPositionRow, firstPositionCol);
+            //                 var positionTo = new Position(secondPositionRow, secondPositionCol);
+            //
+            //                 if (DistanceBetweenPositions.ContainsKey((positionFrom, positionTo)) ||
+            //                     DistanceBetweenPositions.ContainsKey((positionTo, positionFrom)))
+            //                 {
+            //                     continue;
+            //                 }
+            //
+            //                 // If positions equal - distance between them = 0
+            //                 if (positionFrom.Equals(positionTo))
+            //                 {
+            //                     DistanceBetweenPositions.Add((positionFrom, positionTo), 0);
+            //
+            //                     continue;
+            //                 }
+            //
+            //                 var startNode = Graph.NodeGrid[firstPositionRow, firstPositionCol];
+            //                 var finishNode = Graph.NodeGrid[secondPositionRow, secondPositionCol];
+            //                 if (startNode == null || finishNode == null)
+            //                 {
+            //                     continue;
+            //                 }
+            //
+            //                 var distance = UseBfs
+            //                     ? Graph.BFS(startNode, finishNode)
+            //                     : Math.Abs(firstPositionRow - secondPositionRow) +
+            //                       Math.Abs(firstPositionCol - secondPositionCol);
+            //
+            //                 DistanceBetweenPositions.Add((positionFrom, positionTo), distance);
+            //                 DistanceBetweenPositions.Add((positionTo, positionFrom), distance);
+            //             }
+            //         }
+            //     }
+            // }
         }
     }
 }

@@ -12,7 +12,7 @@ namespace MultiAgent.SearchClient.Search
         {
             var agentDistance = state.AgentGoal == null
                 ? 0
-                : Level.DistanceBetweenPositions[(state.AgentPosition, state.AgentGoal.GetInitialLocation())];
+                : Level.GetDistanceBetweenPosition(state.AgentPosition, state.AgentGoal.GetInitialLocation());
 
             // var goalCount = saState.BoxGoals.Count(boxGoal =>
             // {
@@ -42,13 +42,14 @@ namespace MultiAgent.SearchClient.Search
                 foreach (var box in state.PositionsOfBoxes.Where(b => b.Value.Letter == goal.Letter))
                 {
                     // Box placed correctly already
-                    if (state.BoxGoals.Exists(g => g.Letter == box.Value.Letter && g.GetInitialLocation().Equals(box.Key)))
+                    if (state.BoxGoals.Exists(g =>
+                        g.Letter == box.Value.Letter && g.GetInitialLocation().Equals(box.Key)))
                     {
                         // Disregard box
                         continue;
                     }
 
-                    goalScore += Level.DistanceBetweenPositions[(goal.GetInitialLocation(), box.Key)];
+                    goalScore += Level.GetDistanceBetweenPosition(goal.GetInitialLocation(), box.Key);
                 }
             }
 
@@ -143,18 +144,18 @@ namespace MultiAgent.SearchClient.Search
                 // Find closest box to boxGoal
                 var (boxPosition, box) = state.PositionsOfBoxes
                     .Where(kvp => kvp.Value.Letter == boxGoal.Letter)
-                    .OrderBy(kvp => Level.DistanceBetweenPositions[(kvp.Key, boxGoal.GetInitialLocation())])
+                    .OrderBy(kvp => Level.GetDistanceBetweenPosition(kvp.Key, boxGoal.GetInitialLocation()))
                     .First();
 
-                var boxToGoalDistance = Level.DistanceBetweenPositions[(boxPosition, boxGoal.GetInitialLocation())];
+                var boxToGoalDistance = Level.GetDistanceBetweenPosition(boxPosition, boxGoal.GetInitialLocation());
 
                 // Find position of agent closest to box
                 var closestAgentPosition = state.PositionsOfAgents
                     .Where(kvp => kvp.Value.Color == box.Color)
-                    .OrderBy(kvp => Level.DistanceBetweenPositions[(kvp.Key, boxPosition)])
+                    .OrderBy(kvp => Level.GetDistanceBetweenPosition(kvp.Key, boxPosition))
                     .First().Key;
 
-                var agentToBoxDistance = Level.DistanceBetweenPositions[(closestAgentPosition, boxPosition)];
+                var agentToBoxDistance = Level.GetDistanceBetweenPosition(closestAgentPosition, boxPosition);
 
                 distance += boxToGoalDistance + agentToBoxDistance;
             }
@@ -188,8 +189,8 @@ namespace MultiAgent.SearchClient.Search
                     if (agentGoal != null)
                     {
                         agentToGoalDistance +=
-                            Level.DistanceBetweenPositions[
-                                (state.AgentPositions[agent], agentGoal.GetInitialLocation())];
+                            Level.GetDistanceBetweenPosition
+                                (state.AgentPositions[agent], agentGoal.GetInitialLocation());
                     }
                 }
             }

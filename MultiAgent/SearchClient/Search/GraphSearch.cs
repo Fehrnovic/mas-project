@@ -7,7 +7,7 @@ namespace MultiAgent.SearchClient.Search
 {
     public class GraphSearch
     {
-        public static bool OutputProgress = false;
+        public static bool OutputProgress = true;
 
         public static readonly Stopwatch Timer = new();
 
@@ -65,7 +65,7 @@ namespace MultiAgent.SearchClient.Search
 
         private static void PrintSearchStatus(HashSet<IState> exploredStates, IFrontier frontier)
         {
-            var elapsedTime = (Timer.ElapsedMilliseconds) / 1000.0;
+            var elapsedTime = (Program.Timer.ElapsedMilliseconds) / 1000.0;
             Console.Error.WriteLine(
                 $"#Expanded {exploredStates.Count}, #Frontier: {frontier.Size()}, #Generated: {exploredStates.Count + frontier.Size()}, Time: {elapsedTime}");
         }

@@ -11,11 +11,13 @@ namespace MultiAgent.SearchClient.CBS
         public Dictionary<IAgent, List<IStep>> Solution;
         public int Cost => CalculateCost();
         public static int[,] CM = new int[Level.Agents.Count, Level.Agents.Count];
-        public static readonly int B = 80; 
+        public static readonly int B = 10;
 
         private int CalculateCost()
         {
-            return Solution.Values.Max(l => l.Count) + Constraints.Count;
+            int bonus = Solution.Keys.Sum(agent => agent is MetaAgent ? agent.Agents.Count : 0);
+
+            return Solution.Values.Max(l => l.Count) + Constraints.Count - bonus;
             // return Solution.Values.Aggregate(0, (current, solution) => current + solution.Count);
             //var sum = 0;
             //foreach (var solution in Solution.Values)
@@ -28,6 +30,7 @@ namespace MultiAgent.SearchClient.CBS
 
         public static bool ShouldMerge(IAgent agent1, IAgent agent2)
         {
+            return false;
             return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
         }
 
