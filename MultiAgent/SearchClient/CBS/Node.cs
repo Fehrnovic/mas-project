@@ -7,11 +7,11 @@ namespace MultiAgent.SearchClient.CBS
 {
     public class Node
     {
-        public HashSet<Constraint> Constraints = new();
+        public HashSet<IConstraint> Constraints = new();
         public Dictionary<IAgent, List<IStep>> Solution;
         public int Cost => CalculateCost();
         public static int[,] CM = new int[Level.Agents.Count, Level.Agents.Count];
-        public static readonly int B = 80; 
+        public static readonly int B = 80;
 
         private int CalculateCost()
         {

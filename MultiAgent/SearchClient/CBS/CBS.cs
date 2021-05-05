@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using MultiAgent.SearchClient.Search;
 using MultiAgent.SearchClient.Utils;
 
@@ -22,7 +21,7 @@ namespace MultiAgent.SearchClient.CBS
 
             var root = new Node
             {
-                Constraints = new HashSet<Constraint>(),
+                Constraints = new HashSet<IConstraint>(),
                 Solution = new Dictionary<IAgent, List<IStep>>(),
             };
 
@@ -41,11 +40,11 @@ namespace MultiAgent.SearchClient.CBS
 
             while (OPEN.Any())
             {
-                if (++Counter % 100 == 0)
-                {
-                    Console.Error.WriteLine(
-                        $"OPEN has size : {OPEN.Values.Count}. Time spent: {timer.ElapsedMilliseconds / 1000.0} s");
-                }
+                // if (++Counter % 100 == 0)
+                // {
+                //     Console.Error.WriteLine(
+                //         $"OPEN has size : {OPEN.Values.Count}. Time spent: {timer.ElapsedMilliseconds / 1000.0} s");
+                // }
 
                 var minCost = OPEN.Keys.Min();
 
@@ -73,8 +72,7 @@ namespace MultiAgent.SearchClient.CBS
 
                 if (Node.ShouldMerge(agent1, agent2))
                 {
-                    Console.Error.WriteLine($"Merging agent: {agent1.ReferenceAgent} and {agent2.ReferenceAgent}");
-                    MetaAgent metaAgent = new MetaAgent();
+                    var metaAgent = new MetaAgent();
                     switch (agent1, agent2)
                     {
                         case (Agent a1, Agent a2):
@@ -113,6 +111,8 @@ namespace MultiAgent.SearchClient.CBS
 
                             break;
                     }
+
+                    Console.Error.WriteLine($"Merging agent: {agent1} and {agent2} and created metaagent: {metaAgent}");
 
                     // TODO: MAKE THIS BETTER, TO ONLY REMOVE INTERNAL CONFLICTS
                     P.Constraints = P.Constraints.Where(c => !metaAgent.Agents.Contains(c.Agent)).ToHashSet();
@@ -203,22 +203,66 @@ namespace MultiAgent.SearchClient.CBS
                 foreach (var conflictedAgent in conflict.ConflictedAgents)
                 {
                     var A = new Node();
-                    A.Constraints = new HashSet<Constraint>(P.Constraints);
+                    A.Constraints = new HashSet<IConstraint>(P.Constraints);
 
-                    Constraint constraint;
+                    var constraints = new List<IConstraint>();
+                    HashSet<Position> corridor;
                     switch (conflict)
                     {
                         case PositionConflict positionConflict:
-                            constraint = new Constraint
+                            corridor = CorridorHelper.CorridorOfPosition(positionConflict.Position);
+                            if (corridor != null)
                             {
-                                Agent = conflictedAgent.ReferenceAgent,
-                                Position = positionConflict.Position,
-                                Time = positionConflict.Time,
-                            };
+                                // Find other agent
+                                var otherAgent = conflict.ConflictedAgents[0] == conflictedAgent
+                                    ? conflict.ConflictedAgents[1]
+                                    : conflict.ConflictedAgents[0];
+
+                                // Find time other agent is still in the corridor
+                                var timeCounter = positionConflict.Time;
+                                while (timeCounter < P.Solution[otherAgent].Count
+                                       && P.Solution[otherAgent][timeCounter].Positions
+                                           .Exists(p => corridor.Contains(p)))
+                                {
+                                    timeCounter++;
+                                }
+
+                                // Add constraints for agent saying it cannot go into corridor while the other agent is still there
+                                var maxTime = timeCounter;
+
+                                // Find entry time for agent
+                                timeCounter = positionConflict.Time;
+                                while (timeCounter > 0
+                                       && P.Solution[conflictedAgent][timeCounter].Positions
+                                           .Exists(p => corridor.Contains(p)))
+                                {
+                                    timeCounter--;
+                                }
+
+                                // Add constraint saying the agent should not enter while the other agent is still in there
+                                var minTime = timeCounter;
+
+                                constraints.Add(new CorridorConstraint
+                                {
+                                    Agent = conflictedAgent.ReferenceAgent,
+                                    CorridorPositions = corridor.ToList(),
+                                    Time = (minTime, maxTime),
+                                });
+                            }
+                            else
+                            {
+                                constraints.Add(new Constraint
+                                {
+                                    Agent = conflictedAgent.ReferenceAgent,
+                                    Position = positionConflict.Position,
+                                    Time = positionConflict.Time,
+                                });
+                            }
+
                             break;
 
                         case FollowConflict followConflict:
-                            constraint = new Constraint
+                            var constraint = new Constraint
                             {
                                 Agent = conflictedAgent.ReferenceAgent,
                                 Position = followConflict.FollowerPosition,
@@ -232,13 +276,19 @@ namespace MultiAgent.SearchClient.CBS
                                 continue;
                             }
 
+                            constraints.Add(constraint);
+
                             break;
 
                         default:
                             throw new ArgumentOutOfRangeException(nameof(conflict));
                     }
 
-                    A.Constraints.Add(constraint);
+                    foreach (var constraint in constraints)
+                    {
+                        A.Constraints.Add(constraint);
+                    }
+
                     A.Solution = P.CloneSolution();
 
                     IState state;
