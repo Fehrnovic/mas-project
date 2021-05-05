@@ -76,7 +76,6 @@ namespace MultiAgent
                 {
                     var hasUnfinishedBoxGoals = missingBoxGoals[agent].Any();
                     var hasCurrentBoxGoal = currentBoxGoal[agent] != null;
-                    var hasAgentGoal = Level.AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number) != null;
 
                     if (hasCurrentBoxGoal)
                     {
@@ -159,19 +158,20 @@ namespace MultiAgent
                 }
 
                 // Do CBS - need to return the state for the finished solution for each agent to be used later on
-                var solution = CBS.Run(delegation);
+                // solution = Dictionary<Agent, List<SAStep>>
+                var solution = (Dictionary<Agent, List<SAStep>>) CBS.Run(delegation);
 
                 // Find the minimum solution of none finished agents.
-                var minSolution = solution.Where(a => a).Min(a => a.Count);
+                var minSolution = solution.Where(a => !finishedAgents[a.Key]).Min(a => a.Value.Count);
 
-                // Retrieve the state of the index of the miminum solution and set as previous solution
+                // Retrieve the state of the index of the mininum solution and set as previous solution
                 foreach (var agent in Level.Agents)
                 {
-                    // TODO: how to get state of a specific step? Make step have state included?
+                    // TODO: Convert all MASteps to SASteps
                     previousSolutionStates[agent] = solution[agent][minSolution].State;
 
                     // For all steps lower than minimum solution, add to the agent solution steps
-                    foreach (var step in solution[agent].Where(s => s < minSolution))
+                    foreach (var step in solution[agent].Take(minSolution))
                     {
                         agentSolutionsSteps[agent].Add(step);
                     }
@@ -179,32 +179,30 @@ namespace MultiAgent
             }
 
             // Solution has now been found using sub-goals. Create action plan
-            // agentSolutionsSteps holds the list of steps to be performed. Convert to action.
+            // agentSolutionsSteps holds the list of steps to be performed for each agent. Convert to action.
 
             Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
-            var noOp = new Action("NoOp", ActionType.NoOp, 0, 0, 0, 0);
-
-            var maxIndex = solution.Max(a => a.Count);
-
-            foreach (var actionList in solution)
+            var maxIndex = agentSolutionsSteps.Max(a => a.Value.Count);
+            foreach (var stepList in agentSolutionsSteps.Values)
             {
-                if (actionList.Count < maxIndex)
+                if (stepList.Count < maxIndex)
                 {
-                    for (var i = actionList.Count; i < maxIndex; i++)
+                    var lastStep = stepList.Last();
+                    for (var i = stepList.Count; i < maxIndex; i++)
                     {
-                        actionList.Add(noOp);
+                        stepList.Add(new SAStep(lastStep));
                     }
                 }
             }
 
-            for (var i = 1; i < solution[0].Count; i++)
+            for (var i = 0; i < agentSolutionsSteps.First().Value.Count; i++)
             {
-                for (var j = 0; j < solution.Count; j++)
+                var counter = 0;
+                foreach (var stepsList in agentSolutionsSteps.Values)
                 {
-                    Console.Write(solution[j][i].Name);
-
-                    if (j != solution.Count - 1)
+                    Console.Write(stepsList[i].Action.Name);
+                    if (counter++ != agentSolutionsSteps.Count - 1)
                     {
                         Console.Write("|");
                     }

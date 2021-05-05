@@ -24,6 +24,13 @@ namespace MultiAgent.SearchClient.Search
             Action = action;
         }
 
+        public SAStep(SAStep previousStep)
+        {
+            Action = Action.NoOp;
+            Positions = previousStep.Positions;
+            State = previousStep.State;
+        }
+
         public SAStep(SAState state)
         {
             State = state;
