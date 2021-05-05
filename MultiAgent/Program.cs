@@ -32,7 +32,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MApacman.lvl");
+            Level.ParseLevel("SAsoko3_04.lvl");
 
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
@@ -40,6 +40,25 @@ namespace MultiAgent
             // GraphSearch.OutputProgress = true;
 
             Timer.Restart();
+
+            foreach (var agent in Level.Agents)
+            {
+                var agentGoal = Level.AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number);
+                var state = new SAState(agent, agentGoal, LevelDelegationHelper.LevelDelegation.AgentToBoxes[agent],
+                    LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[agent],
+                    new HashSet<Constraint>());
+
+                var subProblems = LevelDelegationHelper.CreateSubProblems(state);
+
+                List<IStep> plan = new List<IStep>();
+                foreach (var problem in subProblems)
+                {
+                    plan.AddRange(GraphSearch.Search(problem, new BestFirstFrontier()));
+                }
+
+                Console.Write("Geh");
+            }
+
 
             var solution = CBS.Run();
 

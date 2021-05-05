@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using MultiAgent.SearchClient.Search;
+using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.CBS
 {
@@ -127,13 +129,66 @@ namespace MultiAgent.SearchClient.CBS
 
             LevelDelegation = levelDelegation;
         }
+
+        public static List<SAState> CreateSubProblems(SAState originalState)
+        {
+            int amountOfSubProblems = originalState.BoxGoals.Count * 2;
+            if (originalState.AgentGoal != null)
+            {
+                amountOfSubProblems += 1;
+            }
+
+            SAState[] subProblemStates = new SAState[amountOfSubProblems];
+
+            List<Box> usedBoxes = new List<Box>();
+            int index = 0;
+
+            var previousAgent = originalState.Agent;
+            // Subgoals for each box goal
+            foreach (var boxGoal in originalState.BoxGoals)
+            {
+                // Find closest box to a goal that hasn't been used
+                var closestBox =
+                    originalState.Boxes.Where(b => !usedBoxes.Contains(b))
+                        .ToList()
+                        .Aggregate((currentBox, box) =>
+                            currentBox == null ||
+                            Level.GetDistanceBetweenPosition(currentBox.GetInitialLocation(),
+                                boxGoal.GetInitialLocation()) >
+                            Level.GetDistanceBetweenPosition(box.GetInitialLocation(), boxGoal.GetInitialLocation())
+                                ? box
+                                : currentBox);
+                usedBoxes.Add(closestBox);
+
+                // Find a neighbor to the box
+                var neighborPositionNode = Level.Graph.NodeGrid[closestBox.GetInitialLocation().Row,
+                        closestBox.GetInitialLocation().Column]
+                    .OutgoingNodes.First();
+
+                // Create first state (agent to box)
+                var agentGoal = new Agent(originalState.Agent.Number, originalState.Agent.Color,
+                    new Position(neighborPositionNode.Row, neighborPositionNode.Column));
+                var agentToBoxState = new SAState(previousAgent, agentGoal, originalState.Boxes, new List<Box>(),
+                    new HashSet<Constraint>());
+                subProblemStates[index++] = agentToBoxState;
+
+                // Create second state (box to goal)
+                var agentWithNewStartingPosition = new Agent(originalState.Agent.Number, originalState.Agent.Color,
+                    agentGoal.GetInitialLocation());
+                var boxToGoalState = new SAState(agentWithNewStartingPosition, originalState.Agent, originalState.Boxes,
+                    new List<Box>() {boxGoal}, new HashSet<Constraint>());
+                subProblemStates[index++] = boxToGoalState;
+            }
+
+            return subProblemStates.ToList();
+        }
     }
 
     public class LevelDelegation
     {
         public Dictionary<Agent, List<Box>> AgentToBoxes { get; set; }
         public Dictionary<Agent, List<Box>> AgentToBoxGoals { get; set; }
-        
+
         public LevelDelegation()
         {
             AgentToBoxes = new();
