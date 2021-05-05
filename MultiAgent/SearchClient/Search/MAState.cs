@@ -51,7 +51,7 @@ namespace MultiAgent.SearchClient.Search
                 PositionsOfBoxes.Add(box.GetInitialLocation(), box);
             }
 
-            Constraints = constraints;
+            Constraints = constraints.Where(c => Agents.Exists(a => c.Agent == a)).ToHashSet();
         }
 
         public MAState(MAState parent, Dictionary<Agent, Action> jointActions)
@@ -219,7 +219,12 @@ namespace MultiAgent.SearchClient.Search
 
                 if (!IsConflicting(jointActions))
                 {
-                    expandedStates.Add(new MAState(this, jointActions));
+                    var state = new MAState(this, jointActions);
+
+                    if (state.ConstraintsSatisfied())
+                    {
+                        expandedStates.Add(state);
+                    }
                 }
 
                 // Advance permutation
@@ -363,8 +368,10 @@ namespace MultiAgent.SearchClient.Search
 
         private bool IsConflicting(Dictionary<Agent, Action> jointActions)
         {
-            var destinationRows = new Dictionary<Agent, int>(Agents.Count); // row of new cell to become occupied by action
-            var destinationColumns = new Dictionary<Agent, int>(Agents.Count); // column of new cell to become occupied by action
+            var destinationRows =
+                new Dictionary<Agent, int>(Agents.Count); // row of new cell to become occupied by action
+            var destinationColumns =
+                new Dictionary<Agent, int>(Agents.Count); // column of new cell to become occupied by action
             var boxRows = new Dictionary<Agent, int>(Agents.Count); // current row of box moved by action
             var boxColumns = new Dictionary<Agent, int>(Agents.Count); // current column of box moved by action
             foreach (var agent in Agents)
@@ -528,6 +535,12 @@ namespace MultiAgent.SearchClient.Search
                 }
             }
 
+            if (Constraints.Any() && Constraints.Max(c => c.Time) > Time)
+            {
+                exploredStates.Clear();
+                return false;
+            }
+
             return true;
         }
 
@@ -627,12 +640,15 @@ namespace MultiAgent.SearchClient.Search
 
             foreach (var (agentPosition, agent) in PositionsOfAgents)
             {
-                result = prime * result + (((agentPosition.Row + 1) * 21) * Agents.Count + (agentPosition.Column + 1) * 32) * (agent.Number + 1);
+                result = prime * result +
+                         (((agentPosition.Row + 1) * 21) * Agents.Count + (agentPosition.Column + 1) * 32) *
+                         (agent.Number + 1);
             }
 
             foreach (var (boxPosition, box) in PositionsOfBoxes)
             {
-                result = prime * result + (((boxPosition.Row + 1) * 41) * Level.Rows + (boxPosition.Column + 1) * 62) * box.Letter;
+                result = prime * result + (((boxPosition.Row + 1) * 41) * Level.Rows + (boxPosition.Column + 1) * 62) *
+                    box.Letter;
             }
 
             Hash = result;

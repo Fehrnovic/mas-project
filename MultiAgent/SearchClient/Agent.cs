@@ -49,7 +49,7 @@ namespace MultiAgent.SearchClient
         {
             if (obj is MetaAgent ma)
             {
-                return !ma.Agents.Except(Agents).Any();
+                return ma.Agents.Count == Agents.Count && !ma.Agents.Except(Agents).Any();
             }
 
             return false;
