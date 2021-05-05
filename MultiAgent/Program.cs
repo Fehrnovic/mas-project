@@ -32,7 +32,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MApacman.lvl");
+            Level.ParseLevel("custom/MA_Simple2.lvl");
 
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
@@ -41,11 +41,8 @@ namespace MultiAgent
 
             Timer.Restart();
 
-            var initialState = new MAState(Level.Agents, Level.AgentGoals, Level.Boxes, Level.BoxGoals, new HashSet<Constraint>());
-            var test = GraphSearch.Search(initialState, new BestFirstFrontier());
-
             var solution = CBS.Run();
-            
+
             Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
             var noOp = new Action("NoOp", ActionType.NoOp, 0, 0, 0, 0);

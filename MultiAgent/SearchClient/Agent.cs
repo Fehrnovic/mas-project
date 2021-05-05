@@ -6,6 +6,7 @@ namespace MultiAgent.SearchClient
     public interface IAgent
     {
         Agent ReferenceAgent { get; }
+        List<Agent> Agents { get; }
     }
 
     public class Agent : IAgent
@@ -35,11 +36,12 @@ namespace MultiAgent.SearchClient
         }
 
         public Agent ReferenceAgent => this;
+        public List<Agent> Agents => new List<Agent>() {this};
     }
 
     public class MetaAgent : IAgent
     {
-        public List<Agent> Agents = new();
+        public List<Agent> Agents { get; } = new();
         public Agent ReferenceAgent => Agents[0];
     }
 }
