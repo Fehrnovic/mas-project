@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using MultiAgent.SearchClient.Search;
 
 namespace MultiAgent.SearchClient.CBS
@@ -7,20 +8,27 @@ namespace MultiAgent.SearchClient.CBS
     public class Node
     {
         public HashSet<Constraint> Constraints = new();
-        public Dictionary<Agent, List<Step>> Solution;
+        public Dictionary<IAgent, List<IStep>> Solution;
         public int Cost => CalculateCost();
+        public static int[,] CM = new int[Level.Agents.Count, Level.Agents.Count];
+        public static readonly int B = 80; 
 
         private int CalculateCost()
         {
             return Solution.Values.Max(l => l.Count) + Constraints.Count;
             // return Solution.Values.Aggregate(0, (current, solution) => current + solution.Count);
-            var sum = 0;
-            foreach (var solution in Solution.Values)
-            {
-                sum += solution.Count - 1;
-            }
+            //var sum = 0;
+            //foreach (var solution in Solution.Values)
+            //{
+            //    sum += solution.Count - 1;
+            //}
 
-            return sum;
+            //return sum;
+        }
+
+        public static bool ShouldMerge(IAgent agent1, IAgent agent2)
+        {
+            return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
         }
 
         public IConflict GetConflict()
@@ -39,7 +47,7 @@ namespace MultiAgent.SearchClient.CBS
                 var maxIterations = maxSolutionLength - solution.Count;
                 for (var i = 0; i < maxIterations; i++)
                 {
-                    solution.Add(new Step(lastElement.Positions, null));
+                    solution.Add(new SAStep(lastElement.Positions, null));
                 }
             }
 
@@ -52,6 +60,7 @@ namespace MultiAgent.SearchClient.CBS
                     {
                         var (agent1, agent1Solution) = clonedSolution.ElementAt(agent1Index);
                         var (agent2, agent2Solution) = clonedSolution.ElementAt(agent2Index);
+
 
                         // Check for PositionConflict
 
@@ -106,7 +115,7 @@ namespace MultiAgent.SearchClient.CBS
             return null;
         }
 
-        public Dictionary<Agent, List<Step>> CloneSolution()
+        public Dictionary<IAgent, List<IStep>> CloneSolution()
         {
             return Solution.ToDictionary(
                 x => x.Key,

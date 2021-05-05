@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using MultiAgent.SearchClient.CBS;
 using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient
@@ -18,7 +19,7 @@ namespace MultiAgent.SearchClient
         public static List<HashSet<GraphNode>> Corridors;
 
         public static int WallCount = 0;
-        public static bool UseBfs => Rows * Columns - WallCount < 310;
+        public static bool UseBfs => Rows * Columns - WallCount < 400;
 
         public static int Rows;
         public static int Columns;
@@ -282,6 +283,13 @@ namespace MultiAgent.SearchClient
             Console.Error.WriteLine("Starting initialization of distance map");
             InitializeDistanceMap();
             Console.Error.WriteLine("Distance map initialized");
+
+            Console.Error.WriteLine("Initialize delegation data");
+            LevelDelegationHelper.InitializeDelegationData();
+            Console.Error.WriteLine("Delegation data initialized");
+            
+            LevelDelegationHelper.DelegateLevel();
+            Console.Error.WriteLine("Level delegated");
         }
 
         public static Dictionary<(Position From, Position To), int> DistanceBetweenPositions = new();

@@ -67,6 +67,21 @@ namespace MultiAgent.SearchClient
             BoxRowDelta = boxRowDelta;
             BoxColumnDelta = boxColumnDelta;
         }
+
+        public Action(Action action)
+        {
+            Name = action.Name;
+            Type = action.Type;
+            AgentRowDelta = action.AgentRowDelta;
+            AgentColumnDelta = action.AgentColumnDelta;
+            BoxRowDelta = action.BoxRowDelta;
+            BoxColumnDelta = action.BoxColumnDelta;
+        }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 
     public enum ActionType

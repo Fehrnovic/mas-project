@@ -7,7 +7,7 @@ using MultiAgent.SearchClient.CBS;
 
 namespace MultiAgent.SearchClient.Search
 {
-    public class State
+    public class SAState : IState
     {
         public Agent Agent;
         public Position AgentPosition;
@@ -16,18 +16,18 @@ namespace MultiAgent.SearchClient.Search
         public List<Box> Boxes;
         public List<Box> BoxGoals;
 
-        // State information
+        // SAState information
         public readonly Dictionary<Position, Box> PositionsOfBoxes;
 
         public Action Action;
 
-        public State Parent;
+        public SAState Parent;
         public int Time;
         public HashSet<Constraint> Constraints;
 
         private int Hash = 0;
 
-        public State(Agent agent, Agent agentGoal, List<Box> boxes, List<Box> boxGoals,
+        public SAState(Agent agent, Agent agentGoal, List<Box> boxes, List<Box> boxGoals,
             HashSet<Constraint> constraints)
         {
             Agent = agent;
@@ -46,7 +46,7 @@ namespace MultiAgent.SearchClient.Search
             Constraints = constraints.Where(c => c.Agent == Agent).ToHashSet();
         }
 
-        public State(State parent, Action action)
+        public SAState(SAState parent, Action action)
         {
             Parent = parent;
             Action = action;
@@ -134,16 +134,16 @@ namespace MultiAgent.SearchClient.Search
             }
         }
 
-        public List<State> GetExpandedStates()
+        public IEnumerable<IState> GetExpandedStates()
         {
             // Determine list of applicable actions for the agent
-            List<State> reachableStates = new(16);
+            List<SAState> reachableStates = new(16);
 
             foreach (var action in Action.AllActions)
             {
                 if (IsApplicable(action))
                 {
-                    var state = new State(this, action);
+                    var state = new SAState(this, action);
 
                     if (state.ConstraintsSatisfied())
                     {
@@ -167,7 +167,7 @@ namespace MultiAgent.SearchClient.Search
 
         public List<Position> GetStatePositions()
         {
-            var positions = new List<Position> {AgentPosition};
+            var positions = new List<Position> { AgentPosition };
             positions.AddRange(PositionsOfBoxes.Keys);
 
             return positions;
@@ -257,10 +257,9 @@ namespace MultiAgent.SearchClient.Search
             return PositionsOfBoxes.TryGetValue(position, out var box) ? box : null;
         }
 
-        public bool IsGoalState(HashSet<State> exploredStates)
+        public bool IsGoalState(HashSet<IState> exploredStates)
         {
             var boxesCompleted = true;
-            var agentCompleted = false;
 
             foreach (var boxGoal in BoxGoals)
             {
@@ -290,17 +289,17 @@ namespace MultiAgent.SearchClient.Search
             return false;
         }
 
-        public List<Step> ExtractPlan()
+        public IEnumerable<IStep> ExtractPlan()
         {
-            var plan = new Step[Time + 1];
+            var plan = new SAStep[Time + 1];
             var state = this;
             while (state.Action != null)
             {
-                plan[state.Time] = new Step(state);
+                plan[state.Time] = new SAStep(state);
                 state = state.Parent;
             }
 
-            plan[0] = new Step(state);
+            plan[0] = new SAStep(state);
 
             return plan.ToList();
         }
@@ -339,36 +338,33 @@ namespace MultiAgent.SearchClient.Search
 
         public override bool Equals(object obj)
         {
-            if (obj is not State state)
+            if (obj is not SAState state)
             {
                 return false;
             }
 
 
-            var boxesEqual = true;
-
             foreach (var (boxPosition, box) in PositionsOfBoxes)
             {
                 if (!state.PositionsOfBoxes.TryGetValue(boxPosition, out var box2))
                 {
-                    boxesEqual = false;
+                    return false;
                 }
 
                 if (box != box2)
                 {
-                    boxesEqual = false;
+                    return false;
                 }
             }
 
-            // TODO: Optimization 
+            // TODO: Optimization
             // return AgentPosition == state.AgentPosition && Time == state.Time;
             var constraints = GetRelevantConstraints();
             var constraints2 = state.GetRelevantConstraints();
 
             var isEqual = AgentPosition == state.AgentPosition
                           && constraints.Count == constraints2.Count
-                          && !constraints.Except(constraints2).Any()
-                          && boxesEqual;
+                          && !constraints.Except(constraints2).Any();
 
             return isEqual;
         }

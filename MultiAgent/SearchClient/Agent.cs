@@ -1,8 +1,16 @@
-﻿using MultiAgent.SearchClient.Utils;
+﻿using System.Collections.Generic;
+using System.Linq;
+using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient
 {
-    public class Agent
+    public interface IAgent
+    {
+        Agent ReferenceAgent { get; }
+        List<Agent> Agents { get; }
+    }
+
+    public class Agent : IAgent
     {
         public readonly int Number;
         public readonly Color Color;
@@ -26,6 +34,25 @@ namespace MultiAgent.SearchClient
         public override string ToString()
         {
             return $"{Number}";
+        }
+
+        public Agent ReferenceAgent => this;
+        public List<Agent> Agents => new List<Agent>() {this};
+    }
+
+    public class MetaAgent : IAgent
+    {
+        public List<Agent> Agents { get; } = new();
+        public Agent ReferenceAgent => Agents[0];
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is MetaAgent ma)
+            {
+                return !ma.Agents.Except(Agents).Any();
+            }
+
+            return false;
         }
     }
 }

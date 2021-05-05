@@ -8,17 +8,17 @@ namespace MultiAgent.SearchClient.Search
     public class GraphSearch
     {
         public static bool OutputProgress = false;
-        
+
         public static readonly Stopwatch Timer = new();
 
-        public static List<Step> Search(State initialState, IFrontier frontier)
+        public static IEnumerable<IStep> Search(IState initialState, IFrontier frontier)
         {
             Timer.Restart();
-            
+
             var iterations = 0;
 
             frontier.Add(initialState);
-            var exploredStates = new HashSet<State>();
+            var exploredStates = new HashSet<IState>();
 
             while (true)
             {
@@ -63,7 +63,7 @@ namespace MultiAgent.SearchClient.Search
             }
         }
 
-        private static void PrintSearchStatus(HashSet<State> exploredStates, IFrontier frontier)
+        private static void PrintSearchStatus(HashSet<IState> exploredStates, IFrontier frontier)
         {
             var elapsedTime = (Timer.ElapsedMilliseconds) / 1000.0;
             Console.Error.WriteLine(
