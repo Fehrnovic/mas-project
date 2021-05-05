@@ -54,5 +54,10 @@ namespace MultiAgent.SearchClient
 
             return false;
         }
+
+        public override string ToString()
+        {
+            return $"{ReferenceAgent} ({string.Join(", ", Agents)})";
+        }
     }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using MultiAgent.SearchClient.Search;
 using MultiAgent.SearchClient.Utils;
 
@@ -41,11 +40,11 @@ namespace MultiAgent.SearchClient.CBS
 
             while (OPEN.Any())
             {
-                if (++Counter % 100 == 0)
-                {
-                    Console.Error.WriteLine(
-                        $"OPEN has size : {OPEN.Values.Count}. Time spent: {timer.ElapsedMilliseconds / 1000.0} s");
-                }
+                // if (++Counter % 100 == 0)
+                // {
+                //     Console.Error.WriteLine(
+                //         $"OPEN has size : {OPEN.Values.Count}. Time spent: {timer.ElapsedMilliseconds / 1000.0} s");
+                // }
 
                 var minCost = OPEN.Keys.Min();
 
@@ -73,8 +72,7 @@ namespace MultiAgent.SearchClient.CBS
 
                 if (Node.ShouldMerge(agent1, agent2))
                 {
-                    Console.Error.WriteLine($"Merging agent: {agent1.ReferenceAgent} and {agent2.ReferenceAgent}");
-                    MetaAgent metaAgent = new MetaAgent();
+                    var metaAgent = new MetaAgent();
                     switch (agent1, agent2)
                     {
                         case (Agent a1, Agent a2):
@@ -113,6 +111,8 @@ namespace MultiAgent.SearchClient.CBS
 
                             break;
                     }
+
+                    Console.Error.WriteLine($"Merging agent: {agent1} and {agent2} and created metaagent: {metaAgent}");
 
                     // TODO: MAKE THIS BETTER, TO ONLY REMOVE INTERNAL CONFLICTS
                     P.Constraints = P.Constraints.Where(c => !metaAgent.Agents.Contains(c.Agent)).ToHashSet();
