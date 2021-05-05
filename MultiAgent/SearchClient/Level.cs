@@ -19,7 +19,7 @@ namespace MultiAgent.SearchClient
         public static List<HashSet<GraphNode>> Corridors;
 
         public static int WallCount = 0;
-        public static bool UseBfs => Rows * Columns - WallCount < 400;
+        public static bool UseBfs => Rows * Columns - WallCount < 1;
 
         public static int Rows;
         public static int Columns;

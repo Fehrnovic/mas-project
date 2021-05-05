@@ -5,8 +5,8 @@ set -e
 MEMORY="-Xmx16g"
 FRONTIER="-bfs"
 LEVEL="levels/MApacman.lvl"
-SPEED=500
-TIMEOUT=1800000
+SPEED=100
+TIMEOUT=180
 
 # Set to 1 to enable debugging
 DEBUG=0

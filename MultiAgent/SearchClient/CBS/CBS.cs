@@ -115,7 +115,8 @@ namespace MultiAgent.SearchClient.CBS
                     Console.Error.WriteLine($"Merging agent: {agent1} and {agent2} and created metaagent: {metaAgent}");
 
                     // TODO: MAKE THIS BETTER, TO ONLY REMOVE INTERNAL CONFLICTS
-                    P.Constraints = P.Constraints.Where(c => !metaAgent.Agents.Contains(c.Agent)).ToHashSet();
+                    P.Constraints =
+                        new HashSet<Constraint>(); //P.Constraints.Where(c => !metaAgent.Agents.Contains(c.Agent)).ToHashSet();
 
                     List<Agent> agents = metaAgent.Agents;
                     List<Agent> agentGoals = Level.AgentGoals
@@ -331,7 +332,7 @@ namespace MultiAgent.SearchClient.CBS
                         var boxGoals = ma.Agents
                             .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[a]).ToList();
 
-                        state = new MAState(agents, agentGoals, boxes, boxGoals, P.Constraints);
+                        state = new MAState(agents, agentGoals, boxes, boxGoals, A.Constraints);
                     }
                     else
                     {
