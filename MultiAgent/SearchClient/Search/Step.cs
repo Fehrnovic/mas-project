@@ -16,6 +16,7 @@ namespace MultiAgent.SearchClient.Search
     {
         public List<Position> Positions { get; set; }
         public Action Action { get; set; }
+        public SAState State { get; set; }
 
         public SAStep(List<Position> positions, Action action)
         {
@@ -25,8 +26,8 @@ namespace MultiAgent.SearchClient.Search
 
         public SAStep(SAState state)
         {
+            State = state;
             Action = state.Action;
-
             Positions = state.GetStatePositions();
         }
     }

@@ -46,6 +46,25 @@ namespace MultiAgent.SearchClient.Search
             Constraints = constraints.Where(c => c.Agent == Agent).ToHashSet();
         }
 
+        public SAState(Agent agent, Position initialAgentPosition, Agent agentGoal, Dictionary<Position, Box> boxes, List<Box> boxGoals,
+            HashSet<Constraint> constraints)
+        {
+            Agent = agent;
+            AgentPosition = initialAgentPosition;
+            AgentGoal = agentGoal;
+
+            Boxes = boxes.Values.ToList();
+            BoxGoals = boxGoals;
+
+            PositionsOfBoxes = new Dictionary<Position, Box>(Boxes.Count);
+            foreach (var (boxPosition, box) in boxes)
+            {
+                PositionsOfBoxes.Add(boxPosition, box);
+            }
+
+            Constraints = constraints.Where(c => c.Agent == Agent).ToHashSet();
+        }
+
         public SAState(SAState parent, Action action)
         {
             Parent = parent;

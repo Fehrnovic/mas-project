@@ -12,7 +12,7 @@ namespace MultiAgent.SearchClient.CBS
     {
         public static int Counter = 0;
 
-        public static List<List<Action>> Run()
+        public static List<List<Action>> Run(Dictionary<Agent, SAState> delegation)
         {
             var timer = new Stopwatch();
             timer.Start();
@@ -28,12 +28,7 @@ namespace MultiAgent.SearchClient.CBS
 
             foreach (var agent in Level.Agents)
             {
-                var agentGoal = Level.AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number);
-                var state = new SAState(agent, agentGoal, LevelDelegationHelper.LevelDelegation.AgentToBoxes[agent],
-                    LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[agent],
-                    root.Constraints);
-                root.Solution[agent] =
-                    GraphSearch.Search(state, new BestFirstFrontier())?.ToList();
+                root.Solution[agent] = GraphSearch.Search(delegation[agent], new BestFirstFrontier())?.ToList();
             }
 
             OPEN.Add(root.Cost, new Queue<Node>(new[] {root}));

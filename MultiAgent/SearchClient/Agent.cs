@@ -14,7 +14,7 @@ namespace MultiAgent.SearchClient
     {
         public readonly int Number;
         public readonly Color Color;
-        private readonly Position _initialPosition;
+        private Position _initialPosition;
 
         public Agent(int number, Color color, Position initialPosition)
         {
@@ -26,6 +26,11 @@ namespace MultiAgent.SearchClient
         public Position GetInitialLocation()
         {
             return _initialPosition;
+        }
+
+        public void SetInitialLocation(Position position)
+        {
+            _initialPosition = position;
         }
 
         // DO NOT OVERWRITE EQUAL / HASHCODE!
