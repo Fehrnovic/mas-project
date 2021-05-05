@@ -260,9 +260,8 @@ namespace MultiAgent.SearchClient.Search
         private bool ConstraintsSatisfied()
         {
             var constraints = GetRelevantConstraints();
-            var constrainedPositions = constraints.Select(c => c.Position).ToList();
-
-            var conflictingPositions = GetStatePositions().Intersect(constrainedPositions).ToList();
+            var constrainedPositions = constraints.Select(c => c.Position);
+            var conflictingPositions = GetStatePositions().Intersect(constrainedPositions);
 
             return !conflictingPositions.Any();
         }

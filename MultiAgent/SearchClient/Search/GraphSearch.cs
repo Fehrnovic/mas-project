@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.Search
 {
     public class GraphSearch
     {
-        public static bool OutputProgress = false;
+        public static bool OutputProgress = true;
 
         public static readonly Stopwatch Timer = new();
 
@@ -24,7 +25,7 @@ namespace MultiAgent.SearchClient.Search
             {
                 if (OutputProgress)
                 {
-                    if (++iterations % 100000 == 0)
+                    if (++iterations % 20000 == 0)
                     {
                         PrintSearchStatus(exploredStates, frontier);
                     }
@@ -66,8 +67,14 @@ namespace MultiAgent.SearchClient.Search
         private static void PrintSearchStatus(HashSet<IState> exploredStates, IFrontier frontier)
         {
             var elapsedTime = (Timer.ElapsedMilliseconds) / 1000.0;
+            var type = exploredStates.FirstOrDefault();
+            var prefix = "";
+            if (type != null)
+            {
+                prefix = type is MAState ? "MA" : "SA";
+            }
             Console.Error.WriteLine(
-                $"#Expanded {exploredStates.Count}, #Frontier: {frontier.Size()}, #Generated: {exploredStates.Count + frontier.Size()}, Time: {elapsedTime}");
+                $"{prefix}: #Expanded {exploredStates.Count}, #Frontier: {frontier.Size()}, #Generated: {exploredStates.Count + frontier.Size()}, Time: {elapsedTime}");
         }
     }
 }
