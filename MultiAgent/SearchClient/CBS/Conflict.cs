@@ -10,8 +10,8 @@ namespace MultiAgent.SearchClient.CBS
 
     public class PositionConflict : IConflict
     {
-        public Agent Agent1;
-        public Agent Agent2;
+        public IAgent Agent1;
+        public IAgent Agent2;
         public Position Position;
         public int Time;
 
@@ -20,8 +20,8 @@ namespace MultiAgent.SearchClient.CBS
 
     public class FollowConflict : IConflict
     {
-        public Agent Leader;
-        public Agent Follower;
+        public IAgent Leader;
+        public IAgent Follower;
         public Position FollowerPosition;
         public int FollowerTime;
 

@@ -133,9 +133,7 @@ namespace MultiAgent.SearchClient.CBS
     {
         public Dictionary<Agent, List<Box>> AgentToBoxes { get; set; }
         public Dictionary<Agent, List<Box>> AgentToBoxGoals { get; set; }
-
-        public int Cost { get; set; }
-
+        
         public LevelDelegation()
         {
             AgentToBoxes = new();

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient
@@ -43,5 +44,15 @@ namespace MultiAgent.SearchClient
     {
         public List<Agent> Agents { get; } = new();
         public Agent ReferenceAgent => Agents[0];
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is MetaAgent ma)
+            {
+                return !ma.Agents.Except(Agents).Any();
+            }
+
+            return false;
+        }
     }
 }

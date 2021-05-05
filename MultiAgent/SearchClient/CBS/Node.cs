@@ -11,7 +11,7 @@ namespace MultiAgent.SearchClient.CBS
         public Dictionary<IAgent, List<IStep>> Solution;
         public int Cost => CalculateCost();
         public static int[,] CM = new int[Level.Agents.Count, Level.Agents.Count];
-        public static readonly int B = 10; 
+        public static readonly int B = 80; 
 
         private int CalculateCost()
         {
@@ -58,11 +58,9 @@ namespace MultiAgent.SearchClient.CBS
                 {
                     for (var agent2Index = agent1Index + 1; agent2Index < Solution.Keys.Count; agent2Index++)
                     {
-                        var (agent1Tmp, agent1Solution) = clonedSolution.ElementAt(agent1Index);
-                        var (agent2Tmp, agent2Solution) = clonedSolution.ElementAt(agent2Index);
+                        var (agent1, agent1Solution) = clonedSolution.ElementAt(agent1Index);
+                        var (agent2, agent2Solution) = clonedSolution.ElementAt(agent2Index);
 
-                        var agent1 = agent1Tmp.ReferenceAgent;
-                        var agent2 = agent2Tmp.ReferenceAgent;
 
                         // Check for PositionConflict
 

@@ -59,26 +59,7 @@ namespace MultiAgent.SearchClient.CBS
                 var conflict = P.GetConflict();
                 if (conflict == null)
                 {
-                    List<Action>[] actionsArray = new List<Action>[Level.Agents.Count];
-
-                    foreach (var (iAgent, plan) in P.Solution)
-                    {
-                        if (iAgent is MetaAgent ma)
-                        {
-                            foreach (var agent in ma.Agents)
-                            {
-                                actionsArray[agent.Number] =
-                                    plan.Select(s => ((MAStep) s).JointActions?[agent])?.ToList();
-                            }
-                        }
-
-                        if (iAgent is Agent a)
-                        {
-                            actionsArray[iAgent.ReferenceAgent.Number] = plan.Select(s => ((SAStep) s).Action).ToList();
-                        }
-                    }
-
-                    return actionsArray.ToList();
+                    return ExtractMoves(P);
                 }
 
                 // CONFLICT!
@@ -92,6 +73,7 @@ namespace MultiAgent.SearchClient.CBS
 
                 if (Node.ShouldMerge(agent1, agent2))
                 {
+                    Console.Error.WriteLine($"Merging agent: {agent1.ReferenceAgent} and {agent2.ReferenceAgent}");
                     MetaAgent metaAgent = new MetaAgent();
                     switch (agent1, agent2)
                     {
@@ -148,6 +130,11 @@ namespace MultiAgent.SearchClient.CBS
 
                     if (P.Solution[metaAgent] != null)
                     {
+                        if (P.GetConflict() == null)
+                        {
+                            return ExtractMoves(P);
+                        }
+
                         var cost = P.Cost;
 
                         if (!OPEN.ContainsKey(cost))
@@ -187,6 +174,11 @@ namespace MultiAgent.SearchClient.CBS
 
                             if (P.Solution[metaAgent] != null)
                             {
+                                if (P.GetConflict() == null)
+                                {
+                                    return ExtractMoves(P);
+                                }
+
                                 var cost = P.Cost;
 
                                 if (!OPEN.ContainsKey(cost))
@@ -324,6 +316,11 @@ namespace MultiAgent.SearchClient.CBS
 
                             if (P.Solution[metaAgent] != null)
                             {
+                                if (P.GetConflict() == null)
+                                {
+                                    return ExtractMoves(P);
+                                }
+
                                 var cost = P.Cost;
 
                                 if (!OPEN.ContainsKey(cost))
@@ -345,6 +342,30 @@ namespace MultiAgent.SearchClient.CBS
             }
 
             return null;
+        }
+
+        private static List<List<Action>> ExtractMoves(Node node)
+        {
+            List<Action>[] actionsArray = new List<Action>[Level.Agents.Count];
+
+            foreach (var (iAgent, plan) in node.Solution)
+            {
+                if (iAgent is MetaAgent ma)
+                {
+                    foreach (var agent in ma.Agents)
+                    {
+                        actionsArray[agent.Number] =
+                            plan.Select(s => ((MAStep) s).JointActions?[agent])?.ToList();
+                    }
+                }
+
+                if (iAgent is Agent a)
+                {
+                    actionsArray[iAgent.ReferenceAgent.Number] = plan.Select(s => ((SAStep) s).Action).ToList();
+                }
+            }
+
+            return actionsArray.ToList();
         }
     }
 }
