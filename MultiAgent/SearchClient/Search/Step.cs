@@ -29,6 +29,11 @@ namespace MultiAgent.SearchClient.Search
 
             Positions = state.GetStatePositions();
         }
+
+        public override string ToString()
+        {
+            return $"{Action.Name}";
+        }
     }
 
     public class MAStep : IStep

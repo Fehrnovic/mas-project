@@ -205,20 +205,92 @@ namespace MultiAgent.SearchClient.CBS
                     var A = new Node();
                     A.Constraints = new HashSet<Constraint>(P.Constraints);
 
-                    Constraint constraint;
+                    var constraints = new List<Constraint>();
+                    HashSet<Position> corridor;
                     switch (conflict)
                     {
                         case PositionConflict positionConflict:
-                            constraint = new Constraint
+                            corridor = CorridorHelper.CorridorOfPosition(positionConflict.Position);
+                            if (corridor != null)
                             {
-                                Agent = conflictedAgent.ReferenceAgent,
-                                Position = positionConflict.Position,
-                                Time = positionConflict.Time,
-                            };
+                                // Add constraint for the position conflict for the whole corridor for that time
+                                foreach (var position in corridor)
+                                {
+                                    constraints.Add(new Constraint
+                                    {
+                                        Agent = conflictedAgent.ReferenceAgent,
+                                        Position = position,
+                                        Time = positionConflict.Time,
+                                    });
+                                }
+
+                                // Find other agent
+                                var otherAgent = conflict.ConflictedAgents[0] == conflictedAgent
+                                    ? conflict.ConflictedAgents[1]
+                                    : conflict.ConflictedAgents[0];
+
+                                // Find time other agent is still in the corridor
+                                var timeCounter = positionConflict.Time;
+                                while (timeCounter < P.Solution[otherAgent].Count
+                                       && P.Solution[otherAgent][timeCounter].Positions
+                                           .Exists(p => corridor.Contains(p)))
+                                {
+                                    timeCounter++;
+                                }
+
+                                // Add constraints for agent saying it cannot go into corridor while the other agent is still there
+                                timeCounter = timeCounter - positionConflict.Time;
+                                for (var i = 1; i <= timeCounter; i++)
+                                {
+                                    foreach (var position in corridor)
+                                    {
+                                        constraints.Add(new Constraint
+                                        {
+                                            Agent = conflictedAgent.ReferenceAgent,
+                                            Position = position,
+                                            Time = positionConflict.Time + i,
+                                        });
+                                    }
+                                }
+
+                                // Find entry time for agent
+                                timeCounter = positionConflict.Time;
+                                while (timeCounter > 0
+                                       && P.Solution[conflictedAgent][timeCounter].Positions
+                                           .Exists(p => corridor.Contains(p)))
+                                {
+                                    timeCounter--;
+                                }
+
+                                // Add constraint saying the agent should not enter while the other agent is still in there
+                                timeCounter = positionConflict.Time - timeCounter;
+                                for (var i = 1; i <= timeCounter; i++)
+                                {
+                                    foreach (var position in corridor)
+                                    {
+                                        constraints.Add(new Constraint
+                                        {
+                                            Agent = conflictedAgent.ReferenceAgent,
+                                            Position = position,
+                                            Time = positionConflict.Time - i,
+                                        });
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                constraints.Add(new Constraint
+                                {
+                                    Agent = conflictedAgent.ReferenceAgent,
+                                    Position = positionConflict.Position,
+                                    Time = positionConflict.Time,
+                                });
+                            }
+
                             break;
 
                         case FollowConflict followConflict:
-                            constraint = new Constraint
+                            var constraint = new Constraint
                             {
                                 Agent = conflictedAgent.ReferenceAgent,
                                 Position = followConflict.FollowerPosition,
@@ -232,13 +304,19 @@ namespace MultiAgent.SearchClient.CBS
                                 continue;
                             }
 
+                            constraints.Add(constraint);
+
                             break;
 
                         default:
                             throw new ArgumentOutOfRangeException(nameof(conflict));
                     }
 
-                    A.Constraints.Add(constraint);
+                    foreach (var constraint in constraints)
+                    {
+                        A.Constraints.Add(constraint);
+                    }
+
                     A.Solution = P.CloneSolution();
 
                     IState state;
