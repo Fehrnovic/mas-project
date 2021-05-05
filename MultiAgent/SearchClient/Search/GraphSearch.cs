@@ -9,6 +9,7 @@ namespace MultiAgent.SearchClient.Search
     public class GraphSearch
     {
         public static bool OutputProgress = true;
+        public static bool OutputFinish = false;
 
         public static readonly Stopwatch Timer = new();
 
@@ -42,7 +43,7 @@ namespace MultiAgent.SearchClient.Search
 
                 if (state.IsGoalState(exploredStates))
                 {
-                    if (OutputProgress)
+                    if (OutputProgress && OutputFinish)
                     {
                         Console.Error.WriteLine("Found goal with following status:");
                         PrintSearchStatus(exploredStates, frontier);
