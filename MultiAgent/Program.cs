@@ -8,7 +8,6 @@ using MultiAgent.SearchClient;
 using MultiAgent.SearchClient.CBS;
 using MultiAgent.SearchClient.Search;
 using MultiAgent.SearchClient.Utils;
-using Action = MultiAgent.SearchClient.Action;
 
 namespace MultiAgent
 {
@@ -96,7 +95,7 @@ namespace MultiAgent
                     }
                     else if (hasUnfinishedBoxGoals)
                     {
-                        // Sub-goal 1: Get to box to solve first box-goal
+                        // Sub-goal: Get to box to solve first box-goal
                         var boxGoal = missingBoxGoals[agent].Dequeue();
 
                         Box closestBox = null;
@@ -159,6 +158,8 @@ namespace MultiAgent
 
                 // Do CBS - need to return the state for the finished solution for each agent to be used later on
                 // solution = Dictionary<Agent, List<SAStep>>
+                // TODO: Make CBS.Run(delegation) return dictionary as above.
+                // Should it return SAStep or IStep? We need it as SAStep- so who should convert?
                 var solution = (Dictionary<Agent, List<SAStep>>) CBS.Run(delegation);
 
                 // Find the minimum solution of none finished agents.
