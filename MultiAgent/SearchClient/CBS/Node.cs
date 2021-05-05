@@ -28,6 +28,7 @@ namespace MultiAgent.SearchClient.CBS
 
         public static bool ShouldMerge(IAgent agent1, IAgent agent2)
         {
+            return false;
             return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
         }
 

@@ -346,7 +346,6 @@ namespace MultiAgent.SearchClient.Search
                 return false;
             }
 
-
             foreach (var (boxPosition, box) in PositionsOfBoxes)
             {
                 if (!state.PositionsOfBoxes.TryGetValue(boxPosition, out var box2))
@@ -361,15 +360,17 @@ namespace MultiAgent.SearchClient.Search
             }
 
             // TODO: Optimization
-            // return AgentPosition == state.AgentPosition && Time == state.Time;
-            var constraints = GetRelevantConstraints().ToList();
-            var constraints2 = state.GetRelevantConstraints().ToList();
+            return AgentPosition == state.AgentPosition && Time == state.Time;
+            // var constraints = GetRelevantConstraints().ToList();
+            // var constraints2 = state.GetRelevantConstraints().ToList();
 
-            var isEqual = AgentPosition == state.AgentPosition
-                          && constraints.Count == constraints2.Count
-                          && !constraints.Except(constraints2).Any();
+            // var isEqual = AgentPosition == state.AgentPosition
+                          // && constraints.Count == constraints2.Count
+                          // && !constraints.Except(constraints2).Any()
+                          // && constraints.Count > 1
+                          // && !constraints.Exists(c => c is CorridorConstraint);
 
-            return isEqual;
+            // return isEqual;
         }
 
         public override int GetHashCode()

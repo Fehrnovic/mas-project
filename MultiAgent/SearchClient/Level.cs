@@ -19,7 +19,7 @@ namespace MultiAgent.SearchClient
         public static List<HashSet<GraphNode>> Corridors;
 
         public static int WallCount = 0;
-        public static bool UseBfs => Rows * Columns - WallCount < 400;
+        public static bool UseBfs => Rows * Columns - WallCount < 1;
 
         public static int Rows;
         public static int Columns;
@@ -287,7 +287,7 @@ namespace MultiAgent.SearchClient
             Console.Error.WriteLine("Initialize delegation data");
             LevelDelegationHelper.InitializeDelegationData();
             Console.Error.WriteLine("Delegation data initialized");
-            
+
             LevelDelegationHelper.DelegateLevel();
             Console.Error.WriteLine("Level delegated");
         }
