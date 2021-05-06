@@ -346,7 +346,7 @@ namespace MultiAgent.SearchClient.CBS
             var agentMoves = new Dictionary<Agent, List<SAStep>>(Level.Agents.Count);
             foreach (var (agent, steps) in node.Solution.Where(n => n.Key is Agent))
             {
-                agentMoves.Add((Agent) agent, (List<SAStep>) steps.Select(s => (SAStep) s));
+                agentMoves.Add((Agent) agent, steps.Select(s => (SAStep) s).ToList());
             }
 
             return agentMoves;

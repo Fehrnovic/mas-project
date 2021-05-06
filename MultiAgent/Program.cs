@@ -33,7 +33,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("SAsoko3_04.lvl");
+            Level.ParseLevel("MAsimple1.lvl");
 
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
@@ -84,7 +84,7 @@ namespace MultiAgent
                             previousSolutionStates[agent].AgentPosition,
                             null,
                             previousSolutionStates[agent].PositionsOfBoxes,
-                            previousSolutionStates[agent].BoxGoals.Append(currentBoxGoal[agent]).ToList(),
+                            previousSolutionStates[agent].BoxGoals.Append(currentBoxGoal[agent]).ToHashSet().ToList(),
                             new HashSet<Constraint>()
                         );
 
@@ -93,10 +93,7 @@ namespace MultiAgent
                         continue;
                     }
 
-                    var hasUnfinishedBoxGoals = missingBoxGoals[agent].Any();
-                    var hasCurrentBoxGoal = currentBoxGoal[agent] != null;
-
-                    if (hasCurrentBoxGoal)
+                    if (currentBoxGoal[agent] != null)
                     {
                         // Previous sub-goal was to get to the box to solve a box-goal. Now solve the box goal:
                         var agentToBoxState = new SAState(
@@ -104,7 +101,7 @@ namespace MultiAgent
                             previousSolutionStates[agent].AgentPosition,
                             null,
                             previousSolutionStates[agent].PositionsOfBoxes,
-                            previousSolutionStates[agent].BoxGoals.Append(currentBoxGoal[agent]).ToList(),
+                            previousSolutionStates[agent].BoxGoals.Append(currentBoxGoal[agent]).ToHashSet().ToList(),
                             new HashSet<Constraint>()
                         );
 
@@ -113,7 +110,7 @@ namespace MultiAgent
 
                         delegation.Add(agent, agentToBoxState);
                     }
-                    else if (hasUnfinishedBoxGoals)
+                    else if (missingBoxGoals[agent].Any())
                     {
                         // Sub-goal: Get to box to solve first box-goal
                         var boxGoal = missingBoxGoals[agent].Dequeue();
@@ -176,23 +173,31 @@ namespace MultiAgent
                     }
                 }
 
+                foreach (var (agent, state) in delegation)
+                {
+                    Console.Error.WriteLine($"Agent: {agent} state:");
+                    Console.Error.WriteLine(state.ToString());
+                }
+
                 // Do CBS - need to return the state for the finished solution for each agent to be used later on
                 var solution = CBS.Run(delegation, finishedAgents);
 
                 // Find the minimum solution of none finished agents.
                 var minSolution = solution.Where(a => !finishedAgents[a.Key]).Min(a => a.Value.Count);
 
+                Console.Error.WriteLine($"Found sub-goal solution with min solution of {minSolution} in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+
                 // Retrieve the state of the index of the mininum solution and set as previous solution
                 foreach (var agent in Level.Agents)
                 {
                     // TODO: Convert all MASteps to SASteps
-                    previousSolutionStates[agent] = solution[agent][minSolution].State;
+                    previousSolutionStates[agent] = solution[agent][minSolution - 1].State;
 
                     // Solutions that are not equal to the minimum solution are not finished with their current goal.
                     finishedSubGoal[agent] = solution[agent].Count == minSolution;
 
                     // For all steps take steps up to minimum solution, add to the agent solution steps
-                    foreach (var step in solution[agent].Take(minSolution))
+                    foreach (var step in solution[agent].Take(minSolution - 1))
                     {
                         agentSolutionsSteps[agent].Add(step);
                     }

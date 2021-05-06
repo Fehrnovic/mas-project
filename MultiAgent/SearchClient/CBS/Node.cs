@@ -65,9 +65,9 @@ namespace MultiAgent.SearchClient.CBS
                         var (agent2, agent2Solution) = clonedSolution.ElementAt(agent2Index);
 
                         // Check that the solutions has the time. Otherwise continue (future events should not count as conflicts)
-                        if (agent1Solution.Count < time || agent2Solution.Count < time)
+                        if (time >= agent1Solution.Count || time >= agent2Solution.Count)
                         {
-                            continue;
+                            break;
                         }
 
                         // Check for PositionConflict

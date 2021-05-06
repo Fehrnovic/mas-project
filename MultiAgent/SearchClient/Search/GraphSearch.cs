@@ -6,7 +6,7 @@ namespace MultiAgent.SearchClient.Search
 {
     public class GraphSearch
     {
-        public static bool OutputProgress = true;
+        public static bool OutputProgress = false;
 
         public static readonly Stopwatch Timer = new();
 

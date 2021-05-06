@@ -343,6 +343,11 @@ namespace MultiAgent.SearchClient.Search
                     {
                         s.Append(Agent.Number);
                     }
+                    else if (AgentGoal != null && AgentGoal.GetInitialLocation().Row == row &&
+                             AgentGoal.GetInitialLocation().Column == column)
+                    {
+                        s.Append('$');
+                    }
                     else
                     {
                         s.Append(' ');
