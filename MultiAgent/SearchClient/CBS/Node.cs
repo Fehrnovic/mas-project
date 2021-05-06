@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ConstrainedExecution;
 using MultiAgent.SearchClient.Search;
 
 namespace MultiAgent.SearchClient.CBS
@@ -34,23 +33,24 @@ namespace MultiAgent.SearchClient.CBS
             return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
         }
 
-        public IConflict GetConflict()
+        public IConflict GetConflict(Dictionary<Agent, bool> finishedAgents)
         {
-            // Make sure all solutions are the same length
             var maxSolutionLength = Solution.Values.Max(a => a.Count);
             var clonedSolution = CloneSolution();
-            foreach (var solution in clonedSolution.Values)
+
+            // For all finished agents, make their solution the same length as the longest.
+            foreach (var (agent, value) in clonedSolution.Where(k => finishedAgents[k.Key.ReferenceAgent]))
             {
-                if (solution.Count >= maxSolutionLength)
+                if (value.Count >= maxSolutionLength)
                 {
                     continue;
                 }
 
-                var lastElement = solution[solution.Count - 1];
-                var maxIterations = maxSolutionLength - solution.Count;
+                var lastElement = value.Last();
+                var maxIterations = maxSolutionLength - value.Count;
                 for (var i = 0; i < maxIterations; i++)
                 {
-                    solution.Add(new SAStep(lastElement.Positions, null));
+                    value.Add(new SAStep(lastElement.Positions, null));
                 }
             }
 
@@ -64,9 +64,13 @@ namespace MultiAgent.SearchClient.CBS
                         var (agent1, agent1Solution) = clonedSolution.ElementAt(agent1Index);
                         var (agent2, agent2Solution) = clonedSolution.ElementAt(agent2Index);
 
+                        // Check that the solutions has the time. Otherwise continue (future events should not count as conflicts)
+                        if (agent1Solution.Count < time || agent2Solution.Count < time)
+                        {
+                            continue;
+                        }
 
                         // Check for PositionConflict
-
                         var conflictingPositions = agent1Solution[time].Positions
                             .Intersect(agent2Solution[time].Positions)
                             .ToList();

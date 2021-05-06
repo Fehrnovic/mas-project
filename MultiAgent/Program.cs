@@ -8,6 +8,7 @@ using MultiAgent.SearchClient;
 using MultiAgent.SearchClient.CBS;
 using MultiAgent.SearchClient.Search;
 using MultiAgent.SearchClient.Utils;
+using Action = MultiAgent.SearchClient.Action;
 
 namespace MultiAgent
 {
@@ -41,12 +42,13 @@ namespace MultiAgent
 
             Timer.Restart();
 
-            var usedBoxes = new List<Box>();
-            var previousSolutionStates = new Dictionary<Agent, SAState>();
-            var currentBoxGoal = new Dictionary<Agent, Box>();
-            var finishedAgents = new Dictionary<Agent, bool>();
-            var missingBoxGoals = new Dictionary<Agent, Queue<Box>>();
-            var agentSolutionsSteps = new Dictionary<Agent, List<SAStep>>();
+            var usedBoxes = new List<Box>(Level.Boxes.Count);
+            var previousSolutionStates = new Dictionary<Agent, SAState>(Level.Agents.Count);
+            var currentBoxGoal = new Dictionary<Agent, Box>(Level.Agents.Count);
+            var finishedAgents = new Dictionary<Agent, bool>(Level.Agents.Count);
+            var finishedSubGoal = new Dictionary<Agent, bool>(Level.Agents.Count);
+            var missingBoxGoals = new Dictionary<Agent, Queue<Box>>(Level.Agents.Count);
+            var agentSolutionsSteps = new Dictionary<Agent, List<SAStep>>(Level.Agents.Count);
             foreach (var agent in Level.Agents)
             {
                 var list = new Queue<Box>();
@@ -58,6 +60,7 @@ namespace MultiAgent
                 missingBoxGoals.Add(agent, list);
                 currentBoxGoal.Add(agent, null);
                 finishedAgents.Add(agent, false);
+                finishedSubGoal.Add(agent, false);
                 agentSolutionsSteps.Add(agent, new List<SAStep>());
                 previousSolutionStates.Add(agent, new SAState(
                     agent,
@@ -70,9 +73,26 @@ namespace MultiAgent
 
             while (finishedAgents.Any(f => !f.Value)) // while All goals not satisfied
             {
-                var delegation = new Dictionary<Agent, SAState>();
+                var delegation = new Dictionary<Agent, SAState>(Level.Agents.Count);
                 foreach (var agent in Level.Agents)
                 {
+                    if (finishedSubGoal[agent] && !finishedAgents[agent])
+                    {
+                        // Continue previous goals :)
+                        var agentToBoxState = new SAState(
+                            agent,
+                            previousSolutionStates[agent].AgentPosition,
+                            null,
+                            previousSolutionStates[agent].PositionsOfBoxes,
+                            previousSolutionStates[agent].BoxGoals.Append(currentBoxGoal[agent]).ToList(),
+                            new HashSet<Constraint>()
+                        );
+
+                        delegation.Add(agent, agentToBoxState);
+
+                        continue;
+                    }
+
                     var hasUnfinishedBoxGoals = missingBoxGoals[agent].Any();
                     var hasCurrentBoxGoal = currentBoxGoal[agent] != null;
 
@@ -157,10 +177,7 @@ namespace MultiAgent
                 }
 
                 // Do CBS - need to return the state for the finished solution for each agent to be used later on
-                // solution = Dictionary<Agent, List<SAStep>>
-                // TODO: Make CBS.Run(delegation) return dictionary as above.
-                // Should it return SAStep or IStep? We need it as SAStep- so who should convert?
-                var solution = (Dictionary<Agent, List<SAStep>>) CBS.Run(delegation);
+                var solution = CBS.Run(delegation, finishedAgents);
 
                 // Find the minimum solution of none finished agents.
                 var minSolution = solution.Where(a => !finishedAgents[a.Key]).Min(a => a.Value.Count);
@@ -171,7 +188,10 @@ namespace MultiAgent
                     // TODO: Convert all MASteps to SASteps
                     previousSolutionStates[agent] = solution[agent][minSolution].State;
 
-                    // For all steps lower than minimum solution, add to the agent solution steps
+                    // Solutions that are not equal to the minimum solution are not finished with their current goal.
+                    finishedSubGoal[agent] = solution[agent].Count == minSolution;
+
+                    // For all steps take steps up to minimum solution, add to the agent solution steps
                     foreach (var step in solution[agent].Take(minSolution))
                     {
                         agentSolutionsSteps[agent].Add(step);
@@ -179,30 +199,17 @@ namespace MultiAgent
                 }
             }
 
-            // Solution has now been found using sub-goals. Create action plan
-            // agentSolutionsSteps holds the list of steps to be performed for each agent. Convert to action.
-
             Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
-            var maxIndex = agentSolutionsSteps.Max(a => a.Value.Count);
-            foreach (var stepList in agentSolutionsSteps.Values)
-            {
-                if (stepList.Count < maxIndex)
-                {
-                    var lastStep = stepList.Last();
-                    for (var i = stepList.Count; i < maxIndex; i++)
-                    {
-                        stepList.Add(new SAStep(lastStep));
-                    }
-                }
-            }
-
-            for (var i = 0; i < agentSolutionsSteps.First().Value.Count; i++)
+            // Find the max length solution and run solution
+            for (var i = 0; i < agentSolutionsSteps.Max(a => a.Value.Count); i++)
             {
                 var counter = 0;
+                // Foreach agent, get their step of the current i index
                 foreach (var stepsList in agentSolutionsSteps.Values)
                 {
-                    Console.Write(stepsList[i].Action.Name);
+                    // If still has steps print those- else print no-op
+                    Console.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
                     if (counter++ != agentSolutionsSteps.Count - 1)
                     {
                         Console.Write("|");

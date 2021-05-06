@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using MultiAgent.SearchClient.Search;
-using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.CBS
 {
@@ -12,7 +10,7 @@ namespace MultiAgent.SearchClient.CBS
     {
         public static int Counter = 0;
 
-        public static List<List<Action>> Run(Dictionary<Agent, SAState> delegation)
+        public static Dictionary<Agent, List<SAStep>> Run(Dictionary<Agent, SAState> delegation, Dictionary<Agent, bool> finishedAgents)
         {
             var timer = new Stopwatch();
             timer.Start();
@@ -51,7 +49,7 @@ namespace MultiAgent.SearchClient.CBS
                     OPEN.Remove(minCost);
                 }
 
-                var conflict = P.GetConflict();
+                var conflict = P.GetConflict(finishedAgents);
                 if (conflict == null)
                 {
                     return ExtractMoves(P);
@@ -69,7 +67,7 @@ namespace MultiAgent.SearchClient.CBS
                 if (Node.ShouldMerge(agent1, agent2))
                 {
                     Console.Error.WriteLine($"Merging agent: {agent1.ReferenceAgent} and {agent2.ReferenceAgent}");
-                    MetaAgent metaAgent = new MetaAgent();
+                    var metaAgent = new MetaAgent();
                     switch (agent1, agent2)
                     {
                         case (Agent a1, Agent a2):
@@ -113,12 +111,12 @@ namespace MultiAgent.SearchClient.CBS
                     P.Constraints =
                         new HashSet<Constraint>(); //P.Constraints.Where(c => !metaAgent.Agents.Contains(c.Agent)).ToHashSet();
 
-                    List<Agent> agents = metaAgent.Agents;
-                    List<Agent> agentGoals = Level.AgentGoals
+                    var agents = metaAgent.Agents;
+                    var agentGoals = Level.AgentGoals
                         .Where(ag => metaAgent.Agents.Exists(a => a.Number == ag.Number)).ToList();
-                    List<Box> boxes = metaAgent.Agents
+                    var boxes = metaAgent.Agents
                         .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxes[a]).ToList();
-                    List<Box> boxGoals = metaAgent.Agents
+                    var boxGoals = metaAgent.Agents
                         .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[a]).ToList();
 
                     var state = new MAState(agents, agentGoals, boxes, boxGoals, P.Constraints);
@@ -126,7 +124,7 @@ namespace MultiAgent.SearchClient.CBS
 
                     if (P.Solution[metaAgent] != null)
                     {
-                        if (P.GetConflict() == null)
+                        if (P.GetConflict(finishedAgents) == null)
                         {
                             return ExtractMoves(P);
                         }
@@ -170,7 +168,7 @@ namespace MultiAgent.SearchClient.CBS
 
                             if (P.Solution[metaAgent] != null)
                             {
-                                if (P.GetConflict() == null)
+                                if (P.GetConflict(finishedAgents) == null)
                                 {
                                     return ExtractMoves(P);
                                 }
@@ -312,7 +310,7 @@ namespace MultiAgent.SearchClient.CBS
 
                             if (P.Solution[metaAgent] != null)
                             {
-                                if (P.GetConflict() == null)
+                                if (P.GetConflict(finishedAgents) == null)
                                 {
                                     return ExtractMoves(P);
                                 }
@@ -340,28 +338,18 @@ namespace MultiAgent.SearchClient.CBS
             return null;
         }
 
-        private static List<List<Action>> ExtractMoves(Node node)
+        private static Dictionary<Agent, List<SAStep>> ExtractMoves(Node node)
         {
-            List<Action>[] actionsArray = new List<Action>[Level.Agents.Count];
+            // TODO: Convert all MASteps to SASteps
+            // shouldMerge == false no MASteps are created. But needed for merging
 
-            foreach (var (iAgent, plan) in node.Solution)
+            var agentMoves = new Dictionary<Agent, List<SAStep>>(Level.Agents.Count);
+            foreach (var (agent, steps) in node.Solution.Where(n => n.Key is Agent))
             {
-                if (iAgent is MetaAgent ma)
-                {
-                    foreach (var agent in ma.Agents)
-                    {
-                        actionsArray[agent.Number] =
-                            plan.Select(s => ((MAStep) s).JointActions?[agent])?.ToList();
-                    }
-                }
-
-                if (iAgent is Agent a)
-                {
-                    actionsArray[iAgent.ReferenceAgent.Number] = plan.Select(s => ((SAStep) s).Action).ToList();
-                }
+                agentMoves.Add((Agent) agent, (List<SAStep>) steps.Select(s => (SAStep) s));
             }
 
-            return actionsArray.ToList();
+            return agentMoves;
         }
     }
 }
