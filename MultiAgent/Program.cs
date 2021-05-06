@@ -60,7 +60,7 @@ namespace MultiAgent
                 missingBoxGoals.Add(agent, list);
                 currentBoxGoal.Add(agent, null);
                 finishedAgents.Add(agent, false);
-                finishedSubGoal.Add(agent, false);
+                finishedSubGoal.Add(agent, true);
                 agentSolutionsSteps.Add(agent, new List<SAStep>());
                 previousSolutionStates.Add(agent, new SAState(
                     agent,
@@ -84,7 +84,7 @@ namespace MultiAgent
                             previousSolutionStates[agent].AgentPosition,
                             null,
                             previousSolutionStates[agent].PositionsOfBoxes,
-                            previousSolutionStates[agent].BoxGoals.Append(currentBoxGoal[agent]).ToHashSet().ToList(),
+                            previousSolutionStates[agent].BoxGoals,
                             new HashSet<Constraint>()
                         );
 
@@ -96,12 +96,15 @@ namespace MultiAgent
                     if (currentBoxGoal[agent] != null)
                     {
                         // Previous sub-goal was to get to the box to solve a box-goal. Now solve the box goal:
+                        var boxGoals = previousSolutionStates[agent].BoxGoals.ToHashSet();
+                        boxGoals.Add(currentBoxGoal[agent]);
+
                         var agentToBoxState = new SAState(
                             agent,
                             previousSolutionStates[agent].AgentPosition,
                             null,
                             previousSolutionStates[agent].PositionsOfBoxes,
-                            previousSolutionStates[agent].BoxGoals.Append(currentBoxGoal[agent]).ToHashSet().ToList(),
+                            boxGoals.ToList(),
                             new HashSet<Constraint>()
                         );
 
