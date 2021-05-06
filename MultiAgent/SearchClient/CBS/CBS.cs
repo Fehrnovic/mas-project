@@ -251,13 +251,14 @@ namespace MultiAgent.SearchClient.CBS
                     }
                     else
                     {
-                        var agentGoal =
-                            Level.AgentGoals.FirstOrDefault(ag => ag.Number == conflictedAgent.ReferenceAgent.Number);
-
-                        state = new SAState(conflictedAgent.ReferenceAgent, agentGoal,
-                            LevelDelegationHelper.LevelDelegation.AgentToBoxes[conflictedAgent.ReferenceAgent],
-                            LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[conflictedAgent.ReferenceAgent],
-                            A.Constraints);
+                        state = new SAState(
+                            conflictedAgent.ReferenceAgent,
+                            delegation[conflictedAgent.ReferenceAgent].AgentPosition,
+                            delegation[conflictedAgent.ReferenceAgent].AgentGoal,
+                            delegation[conflictedAgent.ReferenceAgent].PositionsOfBoxes,
+                            delegation[conflictedAgent.ReferenceAgent].BoxGoals,
+                            A.Constraints
+                        );
                     }
 
                     A.Solution[conflictedAgent] =
@@ -279,6 +280,8 @@ namespace MultiAgent.SearchClient.CBS
                     // Agent did not find a solution
                     else
                     {
+                        // TODO: FIX MERGING FOR SUB-GOALS
+
                         // Find agents defined in level (except agents already in this meta agent)
                         // with the same color as the ones in the meta agent
                         var agentsAbleToMerge = Level.Agents.Except(conflictedAgent.Agents)

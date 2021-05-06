@@ -4,8 +4,8 @@ set -e
 # Set the memory, frontier type, level, speed and timeout
 MEMORY="-Xmx16g"
 FRONTIER="-bfs"
-LEVEL="levels/MAsimple1.lvl"
-SPEED=500
+LEVEL="levels/MApacman.lvl"
+SPEED=250
 TIMEOUT=180
 
 # Set to 1 to enable debugging
