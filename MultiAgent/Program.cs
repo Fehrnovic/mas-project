@@ -82,7 +82,7 @@ namespace MultiAgent
                         var agentToBoxState = new SAState(
                             agent,
                             previousSolutionStates[agent].AgentPosition,
-                            null,
+                            previousSolutionStates[agent].AgentGoal,
                             previousSolutionStates[agent].PositionsOfBoxes,
                             previousSolutionStates[agent].BoxGoals,
                             new HashSet<Constraint>()
@@ -176,17 +176,21 @@ namespace MultiAgent
                     }
                 }
 
-                foreach (var (agent, state) in delegation)
-                {
-                    Console.Error.WriteLine($"Agent: {agent} state:");
-                    Console.Error.WriteLine(state.ToString());
-                }
+                // foreach (var (agent, state) in delegation)
+                // {
+                //     Console.Error.WriteLine($"Agent: {agent} state:");
+                //     Console.Error.WriteLine(state.ToString());
+                // }
 
                 // Do CBS - need to return the state for the finished solution for each agent to be used later on
                 var solution = CBS.Run(delegation, finishedAgents);
 
-                // Find the minimum solution of none finished agents.
-                var minSolution = solution.Where(a => !finishedAgents[a.Key]).Min(a => a.Value.Count);
+                // Find the minimum solution.
+                var availableAgents = finishedAgents.Any(f => !f.Value)
+                    ? solution.Where(a => !finishedAgents[a.Key])
+                    : solution;
+
+                var minSolution = availableAgents.Min(a => a.Value.Count);
 
                 Console.Error.WriteLine($"Found sub-goal solution with min solution of {minSolution} in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
@@ -194,13 +198,17 @@ namespace MultiAgent
                 foreach (var agent in Level.Agents)
                 {
                     // TODO: Convert all MASteps to SASteps
-                    previousSolutionStates[agent] = solution[agent][minSolution - 1].State;
+
+                    // How to handle finished states? needs to add no-ops.
+                    var agentMinimumLength = Math.Min(minSolution - 1, solution[agent].Count - 1);
+                    previousSolutionStates[agent] = solution[agent][agentMinimumLength].State;
 
                     // Solutions that are not equal to the minimum solution are not finished with their current goal.
                     finishedSubGoal[agent] = solution[agent].Count == minSolution;
 
                     // For all steps take steps up to minimum solution, add to the agent solution steps
-                    foreach (var step in solution[agent].Take(minSolution - 1))
+                    var steps = solution[agent].Skip(1).Take(agentMinimumLength);
+                    foreach (var step in steps)
                     {
                         agentSolutionsSteps[agent].Add(step);
                     }
@@ -218,13 +226,16 @@ namespace MultiAgent
                 {
                     // If still has steps print those- else print no-op
                     Console.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
+                    Console.Error.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
                     if (counter++ != agentSolutionsSteps.Count - 1)
                     {
                         Console.Write("|");
+                        Console.Error.Write("|");
                     }
                 }
 
                 Console.WriteLine();
+                Console.Error.WriteLine();
             }
         }
 
