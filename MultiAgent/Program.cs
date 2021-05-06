@@ -33,7 +33,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MAsimple5.lvl");
+            Level.ParseLevel("MApacman.lvl");
 
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
