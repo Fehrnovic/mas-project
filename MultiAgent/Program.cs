@@ -76,7 +76,7 @@ namespace MultiAgent
                 var delegation = new Dictionary<Agent, SAState>(Level.Agents.Count);
                 foreach (var agent in Level.Agents)
                 {
-                    if (finishedSubGoal[agent] && !finishedAgents[agent])
+                    if (!finishedSubGoal[agent] && !finishedAgents[agent])
                     {
                         // Continue previous goals :)
                         var agentToBoxState = new SAState(
