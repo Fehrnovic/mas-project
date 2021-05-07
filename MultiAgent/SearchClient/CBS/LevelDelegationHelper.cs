@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MultiAgent.SearchClient.Search;
@@ -35,11 +36,7 @@ namespace MultiAgent.SearchClient.CBS
                         BoxDelegationHelpers.Add(boxDelegation);
                     }
 
-                    var startNode = Level.Graph.NodeGrid[box.GetInitialLocation().Row, box.GetInitialLocation().Column];
-                    var endNode = Level.Graph.NodeGrid[boxGoal.GetInitialLocation().Row,
-                        boxGoal.GetInitialLocation().Column];
-
-                    int cost = Level.Graph.BFS(startNode, endNode);
+                    int cost = Level.GetDistanceBetweenPosition(box.GetInitialLocation(), boxGoal.GetInitialLocation());
                     if (cost < int.MaxValue)
                     {
                         boxGoalDelegation.ReachableBoxes.Add((boxDelegation, cost));
@@ -58,11 +55,7 @@ namespace MultiAgent.SearchClient.CBS
                             AgentDelegationHelpers.Add(agentDelegation);
                         }
 
-                        startNode = Level.Graph.NodeGrid[box.GetInitialLocation().Row, box.GetInitialLocation().Column];
-                        endNode = Level.Graph.NodeGrid[agent.GetInitialLocation().Row,
-                            agent.GetInitialLocation().Column];
-
-                        cost = Level.Graph.BFS(startNode, endNode);
+                        cost = Level.GetDistanceBetweenPosition(box.GetInitialLocation(), agent.GetInitialLocation());
                         if (cost < int.MaxValue)
                         {
                             if (!agentDelegation.ReachableBoxes.Exists(b => b.boxDelegationHelper.BoxReference == box))

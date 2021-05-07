@@ -16,6 +16,9 @@ namespace MultiAgent.SearchClient.Search
         public List<Box> Boxes;
         public List<Box> BoxGoals;
 
+        public Box RelevantBoxToSolveGoal;
+        public Box CurrentBoxGoal;
+
         // SAState information
         public readonly Dictionary<Position, Box> PositionsOfBoxes;
 
@@ -46,7 +49,8 @@ namespace MultiAgent.SearchClient.Search
             Constraints = constraints.Where(c => c.Agent == Agent).ToHashSet();
         }
 
-        public SAState(Agent agent, Position initialAgentPosition, Agent agentGoal, Dictionary<Position, Box> boxes, List<Box> boxGoals,
+        public SAState(Agent agent, Position initialAgentPosition, Agent agentGoal, Dictionary<Position, Box> boxes,
+            List<Box> boxGoals,
             HashSet<Constraint> constraints)
         {
             Agent = agent;
@@ -78,6 +82,8 @@ namespace MultiAgent.SearchClient.Search
 
             Boxes = parent.Boxes;
             BoxGoals = parent.BoxGoals;
+            CurrentBoxGoal = parent.CurrentBoxGoal;
+            RelevantBoxToSolveGoal = parent.RelevantBoxToSolveGoal;
             PositionsOfBoxes = new Dictionary<Position, Box>(parent.Boxes.Count);
             foreach (var (boxPosition, currentBox) in parent.PositionsOfBoxes)
             {
@@ -186,7 +192,7 @@ namespace MultiAgent.SearchClient.Search
 
         public List<Position> GetStatePositions()
         {
-            var positions = new List<Position> { AgentPosition };
+            var positions = new List<Position> {AgentPosition};
             positions.AddRange(PositionsOfBoxes.Keys);
 
             return positions;
@@ -306,6 +312,13 @@ namespace MultiAgent.SearchClient.Search
             }
 
             return false;
+        }
+
+        public Position GetPositionOfBox(Box box)
+        {
+            var positionToBox = PositionsOfBoxes.First(pair => pair.Value == box);
+
+            return positionToBox.Key;
         }
 
         public IEnumerable<IStep> ExtractPlan()

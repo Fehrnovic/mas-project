@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using MultiAgent.SearchClient.CBS;
 using MultiAgent.SearchClient.Utils;
 
@@ -20,6 +21,8 @@ namespace MultiAgent.SearchClient
         public static List<HashSet<GraphNode>> Corridors;
 
         public static int WallCount = 0;
+
+        public static bool UseBfs = true;
 
         public static int Rows;
         public static int Columns;
@@ -285,6 +288,13 @@ namespace MultiAgent.SearchClient
             InitializeDistanceMap();
             Console.Error.WriteLine("Distance map initialized");
 
+            Console.Error.WriteLine((double) WallCount / ((double) Rows * (double) Columns));
+            if ((double) WallCount / ((double) Rows * (double) Columns) < 0.2)
+            {
+                Console.Error.WriteLine("Does not use bfs");
+                UseBfs = false;
+            }
+
             Console.Error.WriteLine("Initialize delegation data");
             LevelDelegationHelper.InitializeDelegationData();
             Console.Error.WriteLine("Delegation data initialized");
@@ -297,7 +307,11 @@ namespace MultiAgent.SearchClient
 
         public static int GetDistanceBetweenPosition(Position from, Position to)
         {
-            // return Math.Abs(from.Row - to.Row) + Math.Abs(from.Column - to.Column);
+            if (!UseBfs)
+            {
+                return Math.Abs(from.Row - to.Row) + Math.Abs(from.Column - to.Column);
+            }
+
             if (from == to)
             {
                 return 0;

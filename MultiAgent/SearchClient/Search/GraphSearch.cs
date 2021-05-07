@@ -6,7 +6,7 @@ namespace MultiAgent.SearchClient.Search
 {
     public class GraphSearch
     {
-        public static bool OutputProgress = false;
+        public static bool OutputProgress = true;
 
         public static readonly Stopwatch Timer = new();
 
@@ -21,15 +21,6 @@ namespace MultiAgent.SearchClient.Search
 
             while (true)
             {
-                if (OutputProgress)
-                {
-                    if (++iterations % 100000 == 0)
-                    {
-                        PrintSearchStatus(exploredStates, frontier);
-                    }
-                }
-
-
                 if (frontier.IsEmpty())
                 {
                     return null;
@@ -38,12 +29,21 @@ namespace MultiAgent.SearchClient.Search
                 var state = frontier.Pop();
                 exploredStates.Add(state);
 
+                if (OutputProgress)
+                {
+                    if (++iterations % 100000 == 0)
+                    {
+                        PrintSearchStatus(exploredStates, frontier);
+                        Console.Error.WriteLine($"{state}");
+                    }
+                }
+
                 if (state.IsGoalState(exploredStates))
                 {
                     if (OutputProgress)
                     {
-                        Console.Error.WriteLine("Found goal with following status:");
-                        PrintSearchStatus(exploredStates, frontier);
+                        // Console.Error.WriteLine("Found goal with following status:");
+                        // PrintSearchStatus(exploredStates, frontier);
                     }
 
                     return state.ExtractPlan();

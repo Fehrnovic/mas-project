@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Linq;
+using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.Search
 {
@@ -6,50 +8,122 @@ namespace MultiAgent.SearchClient.Search
     {
         public static int CalculateHeuristicSA(SAState state)
         {
-            var agentDistance = state.AgentGoal == null
-                ? 0
-                : Level.GetDistanceBetweenPosition(state.AgentPosition, state.AgentGoal.GetInitialLocation());
-
-            // var goalCount = saState.BoxGoals.Count(boxGoal =>
-            // {
-            //     if (saState.PositionsOfBoxes.TryGetValue(boxGoal.GetInitialLocation(), out var box))
-            //     {
-            //         return box.Letter != boxGoal.Letter;
-            //     }
-            //
-            //     return true;
-            // });
-
-            var goalScore = 0;
-
-            foreach (var goal in state.BoxGoals)
+            if (true) // Flint try to make smart heuristic for SA
             {
-                // Goal is complete
-                if (state.BoxAt(goal.GetInitialLocation()) != null)
-                {
-                    if (state.BoxAt(goal.GetInitialLocation()).Letter == goal.Letter)
-                    {
-                        continue;
-                    }
+                int agentDistance = 0;
+                int boxDistance = 0;
+                int solvedGoalsToBoxDistance = 0;
 
-                    goalScore += 100;
+                var boxGoalsPreviouslySolved = state.BoxGoals.Except(new[] {state.CurrentBoxGoal}).ToList();
+                if (boxGoalsPreviouslySolved.Any()) // if any box-goals except the one we are currently solving
+                {
+                    var usedBoxes = new List<Box>(state.Boxes.Count);
+
+                    foreach (var boxGoal in boxGoalsPreviouslySolved)
+                    {
+                        if (state.PositionsOfBoxes.TryGetValue(boxGoal.GetInitialLocation(), out var boxOnTopOfGoal))
+                        {
+                            if (boxGoal.Letter == boxOnTopOfGoal.Letter)
+                            {
+                                continue;
+                            }
+                        }
+
+                        Box closestBox = null;
+                        Position? closestBoxPosition = null;
+                        foreach (var (boxPosition, box) in state.PositionsOfBoxes
+                            .Where(b => !usedBoxes.Contains(b.Value)))
+                        {
+                            if (closestBox == null || !closestBoxPosition.HasValue)
+                            {
+                                closestBox = box;
+                                closestBoxPosition = boxPosition;
+                                continue;
+                            }
+
+                            if (Level.GetDistanceBetweenPosition(closestBoxPosition.Value,
+                                    boxGoal.GetInitialLocation()) >
+                                Level.GetDistanceBetweenPosition(boxPosition, boxGoal.GetInitialLocation()))
+                            {
+                                closestBox = box;
+                                closestBoxPosition = boxPosition;
+                            }
+                        }
+
+                        usedBoxes.Add(closestBox);
+
+                        if (closestBoxPosition != null)
+                        {
+                            solvedGoalsToBoxDistance += Level.GetDistanceBetweenPosition(boxGoal.GetInitialLocation(),
+                                closestBoxPosition.Value);
+                        }
+                    }
                 }
 
-                foreach (var box in state.PositionsOfBoxes.Where(b => b.Value.Letter == goal.Letter))
+                if (state.CurrentBoxGoal != null && state.RelevantBoxToSolveGoal != null)
                 {
-                    // Box placed correctly already
-                    if (state.BoxGoals.Exists(g =>
-                        g.Letter == box.Value.Letter && g.GetInitialLocation().Equals(box.Key)))
-                    {
-                        // Disregard box
-                        continue;
-                    }
-
-                    goalScore += Level.GetDistanceBetweenPosition(goal.GetInitialLocation(), box.Key);
+                    boxDistance += Level.GetDistanceBetweenPosition(state.CurrentBoxGoal.GetInitialLocation(),
+                        state.GetPositionOfBox(state.RelevantBoxToSolveGoal));
+                    // boxDistance +=
+                    //     Level.GetDistanceBetweenPosition(state.GetPositionOfBox(state.RelevantBoxToSolveGoal),
+                    //         state.AgentPosition);
                 }
+
+                if (state.AgentGoal != null)
+                {
+                    agentDistance +=
+                        Level.GetDistanceBetweenPosition(state.AgentGoal.GetInitialLocation(), state.AgentPosition);
+                }
+
+                return solvedGoalsToBoxDistance + boxDistance + agentDistance;
             }
+            else
+            {
+                var agentDistance = state.AgentGoal == null
+                    ? 0
+                    : Level.GetDistanceBetweenPosition(state.AgentPosition, state.AgentGoal.GetInitialLocation());
 
-            return agentDistance + goalScore;
+                // var goalCount = saState.BoxGoals.Count(boxGoal =>
+                // {
+                //     if (saState.PositionsOfBoxes.TryGetValue(boxGoal.GetInitialLocation(), out var box))
+                //     {
+                //         return box.Letter != boxGoal.Letter;
+                //     }
+                //
+                //     return true;
+                // });
+
+                var goalScore = 0;
+
+                foreach (var goal in state.BoxGoals)
+                {
+                    // Goal is complete
+                    if (state.BoxAt(goal.GetInitialLocation()) != null)
+                    {
+                        if (state.BoxAt(goal.GetInitialLocation()).Letter == goal.Letter)
+                        {
+                            continue;
+                        }
+
+                        goalScore += 100;
+                    }
+
+                    foreach (var box in state.PositionsOfBoxes.Where(b => b.Value.Letter == goal.Letter))
+                    {
+                        // Box placed correctly already
+                        if (state.BoxGoals.Exists(g =>
+                            g.Letter == box.Value.Letter && g.GetInitialLocation().Equals(box.Key)))
+                        {
+                            // Disregard box
+                            continue;
+                        }
+
+                        goalScore += Level.GetDistanceBetweenPosition(goal.GetInitialLocation(), box.Key);
+                    }
+                }
+
+                return agentDistance + goalScore;
+            }
         }
 
         public static int CalculateHeuristicMA(MAState state)
