@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using MultiAgent.SearchClient.Search;
 
 namespace MultiAgent.SearchClient.CBS
@@ -29,13 +30,69 @@ namespace MultiAgent.SearchClient.CBS
 
         public static bool ShouldMerge(IAgent agent1, IAgent agent2)
         {
-            return false;
+            return true;
             return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
         }
 
         public void RemoveInternalConstraints(MetaAgent metaAgent)
         {
             Constraints = Constraints.Where(c => c.Conflict.ConflictedAgents.Except(metaAgent.Agents).Any()).ToHashSet();
+        }
+
+        public bool InvokeLowLevelSearch(IAgent agent, IState state)
+        {
+            var agentSolution = GraphSearch.Search(state, new BestFirstFrontier())?.ToList();
+            if (agentSolution == null)
+            {
+                return false;
+            }
+
+            Solution[agent] = agentSolution;
+
+            return true;
+        }
+
+        public Dictionary<Agent, List<SAStep>> ExtractMoves()
+        {
+
+            // TODO: Convert all MASteps to SASteps
+            // shouldMerge == false no MASteps are created. But needed for merging
+
+            var agentMoves = new Dictionary<Agent, List<SAStep>>(Level.Agents.Count);
+            foreach (var (agent, steps) in Solution.Where(n => n.Key is Agent))
+            {
+                if (agent is Agent a1)
+                {
+                    agentMoves.Add(a1, steps.Select(s => (SAStep)s).ToList());
+                }
+                else if (agent is MetaAgent ma)
+                {
+                    foreach (var step in steps)
+                    {
+                        var state = ((MAStep)step).State;
+
+                        foreach (var (a, action) in state.JointActions)
+                        {
+                            var agentBoxes = LevelDelegationHelper.LevelDelegation.AgentToBoxes[a];
+                            var positions = state.PositionsOfBoxes
+                                .Where(kvp => agentBoxes.Contains(kvp.Value))
+                                .Select(kvp => kvp.Key).ToList();
+
+                            var saStep = new SAStep(positions, action);
+                            if (agentMoves.ContainsKey(a))
+                            {
+                                agentMoves[a].Add(saStep);
+                            }
+                            else
+                            {
+                                agentMoves.Add(a, new List<SAStep>() { saStep });
+                            }
+                        }
+                    }
+                }
+            }
+
+            return agentMoves;
         }
 
         public IConflict GetConflict(Dictionary<Agent, bool> finishedAgents)

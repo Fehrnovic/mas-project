@@ -33,7 +33,7 @@ namespace MultiAgent.SearchClient.CBS
                     Console.Error.Write(agent.Number);
                 }
 
-                root.Solution[agent] = GraphSearch.Search(delegation[agent], new BestFirstFrontier())?.ToList();
+                root.InvokeLowLevelSearch(agent, delegation[agent]);
             }
 
             OPEN.Add(root.Cost, new Queue<Node>(new[] {root}));
@@ -67,7 +67,7 @@ namespace MultiAgent.SearchClient.CBS
                         Console.Error.WriteLine();
                     }
 
-                    return ExtractMoves(P);
+                    return P.ExtractMoves();
                 }
 
                 // CONFLICT!
@@ -92,13 +92,13 @@ namespace MultiAgent.SearchClient.CBS
 
                     var state = CreateMAState(metaAgent, P.Constraints);
 
-                    P.Solution.Add(metaAgent, GraphSearch.Search(state, new BestFirstFrontier())?.ToList());
+                    var foundSolution = P.InvokeLowLevelSearch(metaAgent, state);
 
-                    if (P.Solution[metaAgent] != null)
+                    if (foundSolution)
                     {
                         if (P.GetConflict(finishedAgents) == null)
                         {
-                            return ExtractMoves(P);
+                            return P.ExtractMoves();
                         }
 
                         var cost = P.Cost;
@@ -129,13 +129,13 @@ namespace MultiAgent.SearchClient.CBS
 
                             state = CreateMAState(metaAgent, P.Constraints);
 
-                            P.Solution.Add(metaAgent, GraphSearch.Search(state, new BestFirstFrontier())?.ToList());
+                            foundSolution = P.InvokeLowLevelSearch(metaAgent, state);
 
-                            if (P.Solution[metaAgent] != null)
+                            if (foundSolution)
                             {
                                 if (P.GetConflict(finishedAgents) == null)
                                 {
-                                    return ExtractMoves(P);
+                                    return P.ExtractMoves();
                                 }
 
                                 var cost = P.Cost;
@@ -189,10 +189,10 @@ namespace MultiAgent.SearchClient.CBS
                             delegation[conflictedAgent.ReferenceAgent], A.Constraints);
                     }
 
-                    A.Solution[conflictedAgent] = GraphSearch.Search(state, new BestFirstFrontier())?.ToList();
+                    var foundSolution = A.InvokeLowLevelSearch(conflictedAgent, state);
 
                     // Agent found a solution
-                    if (A.Solution[conflictedAgent] != null)
+                    if (foundSolution)
                     {
                         var cost = A.Cost;
 
@@ -293,7 +293,6 @@ namespace MultiAgent.SearchClient.CBS
 
         private static MetaAgent CreateMetaAgent(IAgent agent1, IAgent agent2, Node P)
         {
-            Console.Error.WriteLine($"Merging agent: {agent1.ReferenceAgent} and {agent2.ReferenceAgent}");
             MetaAgent metaAgent = new MetaAgent();
             switch (agent1, agent2)
             {
@@ -333,6 +332,8 @@ namespace MultiAgent.SearchClient.CBS
 
                     break;
             }
+
+            Console.Error.WriteLine($"Merging agent: {agent1} and {agent2} and created metaagent: {metaAgent}");
 
             return metaAgent;
         }
@@ -421,21 +422,6 @@ namespace MultiAgent.SearchClient.CBS
             }
 
             return constraint;
-        }
-
-
-        private static Dictionary<Agent, List<SAStep>> ExtractMoves(Node node)
-        {
-            // TODO: Convert all MASteps to SASteps
-            // shouldMerge == false no MASteps are created. But needed for merging
-
-            var agentMoves = new Dictionary<Agent, List<SAStep>>(Level.Agents.Count);
-            foreach (var (agent, steps) in node.Solution.Where(n => n.Key is Agent))
-            {
-                agentMoves.Add((Agent) agent, steps.Select(s => (SAStep) s).ToList());
-            }
-
-            return agentMoves;
         }
     }
 }

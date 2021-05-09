@@ -44,17 +44,12 @@ namespace MultiAgent.SearchClient.Search
     {
         public List<Position> Positions { get; set; }
         public Dictionary<Agent, Action> JointActions { get; set; }
-
-        public MAStep(List<Position> positions, Dictionary<Agent, Action> jointActions)
-        {
-            Positions = positions;
-            JointActions = jointActions;
-        }
+        public MAState State;
 
         public MAStep(MAState state)
         {
+            State = state;
             Positions = state.GetStatePositions();
-
             JointActions = state.JointActions;
         }
     }

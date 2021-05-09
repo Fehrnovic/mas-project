@@ -42,7 +42,7 @@ namespace MultiAgent.SearchClient
         }
 
         public Agent ReferenceAgent => this;
-        public List<Agent> Agents => new List<Agent>() {this};
+        public List<Agent> Agents => new List<Agent>() { this };
     }
 
     public class MetaAgent : IAgent
