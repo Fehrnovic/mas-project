@@ -36,8 +36,6 @@ namespace MultiAgent
             // Initialize the level
             Level.ParseLevel("MAbispebjerg.lvl");
 
-            var amountOfSubGoals = Level.BoxGoals.Count * 2 + Level.AgentGoals.Count;
-
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
             // Set the GraphSearch to output progress (notice: only quick solutions will crash editor...)
@@ -161,10 +159,27 @@ namespace MultiAgent
 
                         usedBoxes.Add(closestBox);
 
-                        // TODO: optimize neighbor solution
-                        var neighborPositionNode = Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
+                        var allBoxPositions = previousSolutionStates.Values.SelectMany(state =>
+                            agent.Number == state.Agent.Number
+                                ? new List<Position>()
+                                : state.PositionsOfBoxes.Keys.ToList()).ToList();
+
+                        var freeNeighborPositionNodes = Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
                                 closestBoxPosition.Value.Column]
-                            .OutgoingNodes.FirstOrDefault(g => !previousSolutionStates[agent].BoxGoals.Exists(b =>
+                            .OutgoingNodes.Where(node =>
+                                !allBoxPositions.Exists(pos => pos.Column == node.Column && node.Row == pos.Row))
+                            .ToList();
+
+                        var neighborPositionNodes = freeNeighborPositionNodes.Any()
+                            ? freeNeighborPositionNodes
+                            : Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
+                                    closestBoxPosition.Value.Column]
+                                .OutgoingNodes;
+                        // TODO: optimize neighbor solution
+                        var neighborPositionNode = neighborPositionNodes
+                            .OrderBy(g => Level.GetDistanceBetweenPosition(new Position(g.Row, g.Column),
+                                previousSolutionStates[agent].AgentPosition))
+                            .FirstOrDefault(g => !previousSolutionStates[agent].BoxGoals.Exists(b =>
                                 b.GetInitialLocation().Row == g.Row &&
                                 b.GetInitialLocation().Column == g.Column));
 
