@@ -72,7 +72,7 @@ namespace MultiAgent
                     null,
                     LevelDelegationHelper.LevelDelegation.AgentToBoxes[agent],
                     new List<Box>(),
-                    new HashSet<Constraint>()
+                    new HashSet<IConstraint>()
                 ));
             }
 
@@ -90,7 +90,7 @@ namespace MultiAgent
                             previousSolutionStates[agent].AgentGoal,
                             previousSolutionStates[agent].PositionsOfBoxes,
                             previousSolutionStates[agent].BoxGoals,
-                            new HashSet<Constraint>()
+                            new HashSet<IConstraint>()
                         );
 
                         agentToBoxState.CurrentBoxGoal = previousSolutionStates[agent].CurrentBoxGoal;
@@ -113,7 +113,7 @@ namespace MultiAgent
                             null,
                             previousSolutionStates[agent].PositionsOfBoxes,
                             boxGoals.ToList(),
-                            new HashSet<Constraint>()
+                            new HashSet<IConstraint>()
                         );
 
                         if (currentMostRelevantBox[agent] != null)
@@ -187,7 +187,7 @@ namespace MultiAgent
                             agentGoal,
                             previousSolutionStates[agent].PositionsOfBoxes,
                             previousSolutionStates[agent].BoxGoals,
-                            new HashSet<Constraint>()
+                            new HashSet<IConstraint>()
                         );
 
                         // Set the box goal as the next sub-goal to solve
@@ -206,7 +206,7 @@ namespace MultiAgent
                             Level.AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number),
                             previousSolutionStates[agent].PositionsOfBoxes,
                             previousSolutionStates[agent].BoxGoals,
-                            new HashSet<Constraint>()
+                            new HashSet<IConstraint>()
                         );
 
                         finishedAgents[agent] = true;

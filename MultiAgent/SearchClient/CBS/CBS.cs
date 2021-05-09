@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using MultiAgent.SearchClient.Search;
+using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.CBS
 {
@@ -21,7 +22,7 @@ namespace MultiAgent.SearchClient.CBS
 
             var root = new Node
             {
-                Constraints = new HashSet<Constraint>(),
+                Constraints = new HashSet<IConstraint>(),
                 Solution = new Dictionary<IAgent, List<IStep>>(),
             };
 
@@ -69,11 +70,11 @@ namespace MultiAgent.SearchClient.CBS
                     return ExtractMoves(P);
                 }
 
+                // CONFLICT!
                 if (Program.ShouldPrint >= 5)
                 {
                     Console.Error.Write('.');
                 }
-                // CONFLICT!
 
                 // Update Conflict Matrix
                 var agent1 = conflict.ConflictedAgents[0];
@@ -160,13 +161,17 @@ namespace MultiAgent.SearchClient.CBS
 
                 foreach (var conflictedAgent in conflict.ConflictedAgents)
                 {
-                    var A = new Node {Constraints = new HashSet<Constraint>(P.Constraints)};
+                    var A = new Node {Constraints = new HashSet<IConstraint>(P.Constraints)};
 
-                    var constraint = CreateConstraint(conflictedAgent, conflict);
-
+                    var constraint = CreateConstraint(conflictedAgent, conflict, P);
                     if (constraint == null)
                     {
                         continue;
+                    }
+
+                    if (Program.ShouldPrint >= 5)
+                    {
+                        Console.Error.Write(constraint is CorridorConstraint ? 'C' : 'P');
                     }
 
                     A.Constraints.Add(constraint);
@@ -263,7 +268,7 @@ namespace MultiAgent.SearchClient.CBS
             return null;
         }
 
-        public static SAState CreateSAState(Agent agent, SAState previousState, HashSet<Constraint> constraints)
+        public static SAState CreateSAState(Agent agent, SAState previousState, HashSet<IConstraint> constraints)
         {
             var state = new SAState(agent, previousState.AgentPosition, previousState.AgentGoal,
                 previousState.PositionsOfBoxes, previousState.BoxGoals, constraints);
@@ -273,7 +278,7 @@ namespace MultiAgent.SearchClient.CBS
             return state;
         }
 
-        public static MAState CreateMAState(MetaAgent ma, HashSet<Constraint> constraints)
+        public static MAState CreateMAState(MetaAgent ma, HashSet<IConstraint> constraints)
         {
             var agents = ma.Agents;
             var agentGoals = Level.AgentGoals
@@ -332,36 +337,82 @@ namespace MultiAgent.SearchClient.CBS
             return metaAgent;
         }
 
-        private static Constraint CreateConstraint(IAgent conflictedAgent, IConflict conflict)
+        private static IConstraint CreateConstraint(IAgent conflictedAgent, IConflict conflict, Node parentNode)
         {
-            Constraint constraint;
+            IConstraint constraint;
             switch (conflict)
             {
                 case PositionConflict positionConflict:
-                    constraint = new Constraint
+                    var corridor = CorridorHelper.CorridorOfPosition(positionConflict.Position);
+                    if (corridor != null)
                     {
-                        Agent = conflictedAgent.ReferenceAgent,
-                        Position = positionConflict.Position,
-                        Time = positionConflict.Time,
-                        Conflict = conflict
-                    };
+                        // Find other agent
+                        var otherAgent = conflict.ConflictedAgents[0] == conflictedAgent
+                            ? conflict.ConflictedAgents[1]
+                            : conflict.ConflictedAgents[0];
+
+                        // Find time other agent is still in the corridor
+                        var timeCounter = positionConflict.Time;
+                        while (timeCounter < parentNode.Solution[otherAgent].Count
+                               && parentNode.Solution[otherAgent][timeCounter].Positions
+                                   .Exists(p => corridor.Contains(p)))
+                        {
+                            timeCounter++;
+                        }
+
+                        // Add constraints for agent saying it cannot go into corridor while the other agent is still there
+                        var maxTime = timeCounter;
+
+                        // Find entry time for agent
+                        timeCounter = positionConflict.Time;
+                        while (timeCounter > 0
+                               && parentNode.Solution[conflictedAgent][timeCounter].Positions
+                                   .Exists(p => corridor.Contains(p)))
+                        {
+                            timeCounter--;
+                        }
+
+                        // Add constraint saying the agent should not enter while the other agent is still in there
+                        var minTime = timeCounter;
+
+                        constraint = new CorridorConstraint
+                        {
+                            Agent = conflictedAgent.ReferenceAgent,
+                            CorridorPositions = corridor.ToList(),
+                            Time = (minTime, maxTime),
+                            Conflict = conflict,
+                        };
+                    }
+                    else
+                    {
+                        constraint = new Constraint
+                        {
+                            Agent = conflictedAgent.ReferenceAgent,
+                            Position = positionConflict.Position,
+                            Time = positionConflict.Time,
+                            Conflict = conflict
+                        };
+                    }
+
                     break;
 
                 case FollowConflict followConflict:
+                    var constraintTime = conflictedAgent == followConflict.Follower
+                        ? followConflict.FollowerTime
+                        : followConflict.FollowerTime - 1;
+
+                    if (constraintTime <= 0)
+                    {
+                        return null;
+                    }
+
                     constraint = new Constraint
                     {
                         Agent = conflictedAgent.ReferenceAgent,
                         Position = followConflict.FollowerPosition,
-                        Time = conflictedAgent == followConflict.Follower
-                            ? followConflict.FollowerTime
-                            : followConflict.FollowerTime - 1,
-                        Conflict = conflict
+                        Time = constraintTime,
+                        Conflict = conflict,
                     };
-
-                    if (constraint.Time == 0)
-                    {
-                        return null;
-                    }
 
                     break;
 

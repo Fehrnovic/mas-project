@@ -24,12 +24,12 @@ namespace MultiAgent.SearchClient.Search
 
         public MAState Parent;
         public int Time;
-        public HashSet<Constraint> Constraints;
+        public HashSet<IConstraint> Constraints;
 
         private int Hash = 0;
 
         public MAState(List<Agent> agents, List<Agent> agentGoals, List<Box> boxes, List<Box> boxGoals,
-            HashSet<Constraint> constraints)
+            HashSet<IConstraint> constraints)
         {
             Agents = agents;
             AgentGoals = agentGoals;
@@ -259,10 +259,13 @@ namespace MultiAgent.SearchClient.Search
 
         private bool ConstraintsSatisfied()
         {
-            var constraints = GetRelevantConstraints();
-            var constrainedPositions = constraints.Select(c => c.Position).ToList();
+            var constrainedPositions = new List<Position>();
+            foreach (var constraint in GetRelevantConstraints())
+            {
+                constrainedPositions.AddRange(constraint.Positions);
+            }
 
-            var conflictingPositions = GetStatePositions().Intersect(constrainedPositions).ToList();
+            var conflictingPositions = GetStatePositions().Intersect(constrainedPositions);
 
             return !conflictingPositions.Any();
         }
@@ -276,9 +279,9 @@ namespace MultiAgent.SearchClient.Search
             return positions;
         }
 
-        private List<Constraint> GetRelevantConstraints()
+        private IEnumerable<IConstraint> GetRelevantConstraints()
         {
-            return Constraints.Where(c => c.Time == Time).ToList();
+            return Constraints.Where(c => c.Relevant(Time));
         }
 
         private bool IsApplicable(Agent agent, Action action)
@@ -535,7 +538,7 @@ namespace MultiAgent.SearchClient.Search
                 }
             }
 
-            if (Constraints.Any() && Constraints.Max(c => c.Time) > Time)
+            if (Constraints.Any() && Constraints.Max(c => c.Relevant(Time)))
             {
                 exploredStates.Clear();
                 return false;
