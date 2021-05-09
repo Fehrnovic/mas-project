@@ -36,7 +36,8 @@ namespace MultiAgent.SearchClient.CBS
 
         public void RemoveInternalConstraints(MetaAgent metaAgent)
         {
-            Constraints = Constraints.Where(c => c.Conflict.ConflictedAgents.Except(metaAgent.Agents).Any()).ToHashSet();
+            Constraints = Constraints.Where(c => c.Conflict.ConflictedAgents.Except(metaAgent.Agents).Any())
+                .ToHashSet();
         }
 
         public bool InvokeLowLevelSearch(IAgent agent, IState state)
@@ -54,40 +55,38 @@ namespace MultiAgent.SearchClient.CBS
 
         public Dictionary<Agent, List<SAStep>> ExtractMoves()
         {
-
             // TODO: Convert all MASteps to SASteps
             // shouldMerge == false no MASteps are created. But needed for merging
 
             var agentMoves = new Dictionary<Agent, List<SAStep>>(Level.Agents.Count);
-            foreach (var (agent, steps) in Solution.Where(n => n.Key is Agent))
+            foreach (var (agent, steps) in Solution)
             {
-                if (agent is Agent a1)
+                switch (agent)
                 {
-                    agentMoves.Add(a1, steps.Select(s => (SAStep)s).ToList());
-                }
-                else if (agent is MetaAgent ma)
-                {
-                    foreach (var step in steps)
+                    case Agent a1:
+                        agentMoves.Add(a1, steps.Select(s => (SAStep) s).ToList());
+                        break;
+                    case MetaAgent ma:
                     {
-                        var state = ((MAStep)step).State;
-
-                        foreach (var (a, action) in state.JointActions)
+                        foreach (var state in steps.Select(step => ((MAStep) step).State))
                         {
-                            var agentBoxes = LevelDelegationHelper.LevelDelegation.AgentToBoxes[a];
-                            var positions = state.PositionsOfBoxes
-                                .Where(kvp => agentBoxes.Contains(kvp.Value))
-                                .Select(kvp => kvp.Key).ToList();
+                            if (state.JointActions == null)
+                            {
+                                foreach (var a2 in ma.Agents)
+                                {
+                                    agentMoves.Add(a2, new List<SAStep> {new(a2, null, state)});
+                                }
 
-                            var saStep = new SAStep(positions, action);
-                            if (agentMoves.ContainsKey(a))
-                            {
-                                agentMoves[a].Add(saStep);
+                                continue;
                             }
-                            else
+
+                            foreach (var (a, action) in state.JointActions)
                             {
-                                agentMoves.Add(a, new List<SAStep>() { saStep });
+                                agentMoves[a].Add(new SAStep(a, action, state));
                             }
                         }
+
+                        break;
                     }
                 }
             }

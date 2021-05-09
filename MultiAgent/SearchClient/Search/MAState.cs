@@ -54,6 +54,33 @@ namespace MultiAgent.SearchClient.Search
             Constraints = constraints.Where(c => Agents.Exists(a => c.Agent == a)).ToHashSet();
         }
 
+        public MAState(Dictionary<Agent, Position> agents, List<Agent> agentGoals, Dictionary<Position, Box> boxes,
+            List<Box> boxGoals,
+            HashSet<IConstraint> constraints)
+        {
+            Agents = agents.Keys.ToList();
+            AgentGoals = agentGoals;
+
+            Boxes = boxes.Values.ToList();
+            BoxGoals = boxGoals;
+
+            AgentPositions = new Dictionary<Agent, Position>(Agents.Count);
+            PositionsOfAgents = new Dictionary<Position, Agent>(Agents.Count);
+            foreach (var (agent, agentPosition) in agents)
+            {
+                AgentPositions.Add(agent, agentPosition);
+                PositionsOfAgents.Add(agentPosition, agent);
+            }
+
+            PositionsOfBoxes = new Dictionary<Position, Box>(Boxes.Count);
+            foreach (var (boxPosition, box) in boxes)
+            {
+                PositionsOfBoxes.Add(boxPosition, box);
+            }
+
+            Constraints = constraints.Where(c => Agents.Exists(a => c.Agent == a)).ToHashSet();
+        }
+
         public MAState(MAState parent, Dictionary<Agent, Action> jointActions)
         {
             Parent = parent;

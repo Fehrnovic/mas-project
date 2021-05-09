@@ -34,7 +34,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MAchallenge.lvl");
+            Level.ParseLevel("MApacman.lvl");
 
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
@@ -311,16 +311,16 @@ namespace MultiAgent
                 // Retrieve the state of the index of the mininum solution and set as previous solution
                 foreach (var agent in Level.Agents)
                 {
-                    if (finishedAgents.All(f => f.Value))
-                    {
-                        // All agents are finished. Just take their last actions.
-                        foreach (var step in solution[agent].Skip(1).Take(solution[agent].Count - 1))
-                        {
-                            agentSolutionsSteps[agent].Add(step);
-                        }
-
-                        continue;
-                    }
+                    // if (finishedAgents.All(f => f.Value))
+                    // {
+                    //     // All agents are finished. Just take their last actions.
+                    //     foreach (var step in solution[agent].Skip(1).Take(solution[agent].Count - 1))
+                    //     {
+                    //         agentSolutionsSteps[agent].Add(step);
+                    //     }
+                    //
+                    //     continue;
+                    // }
                     // TODO: Convert all MASteps to SASteps
 
                     // How to handle finished states? needs to add no-ops.

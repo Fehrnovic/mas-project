@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using MultiAgent.SearchClient.CBS;
 using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.Search
@@ -18,6 +20,26 @@ namespace MultiAgent.SearchClient.Search
         {
             Positions = positions;
             Action = action;
+        }
+
+        public SAStep(Agent agent, Action action, MAState maState)
+        {
+            var agentBoxes = LevelDelegationHelper.LevelDelegation.AgentToBoxes[agent];
+            var agentBoxGoals = LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[agent];
+            var boxPositions = maState.PositionsOfBoxes
+                .Where(kvp => agentBoxes.Contains(kvp.Value)).ToList();
+            var boxGoals = maState.BoxGoals.Where(bg => agentBoxGoals.Contains(bg)).ToList();
+
+            Action = action;
+            Positions = boxPositions.Select(kvp => kvp.Key).Append(maState.AgentPositions[agent]).ToList();
+            State = new SAState(
+                agent,
+                maState.AgentPositions[agent],
+                maState.AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number),
+                boxPositions.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+                boxGoals,
+                new HashSet<IConstraint>()
+            );
         }
 
         public SAStep(SAStep previousStep)

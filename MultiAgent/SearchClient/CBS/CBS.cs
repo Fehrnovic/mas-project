@@ -90,7 +90,7 @@ namespace MultiAgent.SearchClient.CBS
                     // Remove constraints from internal conflicts
                     P.RemoveInternalConstraints(metaAgent);
 
-                    var state = CreateMAState(metaAgent, P.Constraints);
+                    var state = CreateMAState(metaAgent, delegation, P.Constraints);
 
                     var foundSolution = P.InvokeLowLevelSearch(metaAgent, state);
 
@@ -127,7 +127,7 @@ namespace MultiAgent.SearchClient.CBS
                             P.Solution.Remove(metaAgent);
                             metaAgent.Agents.Add(mergeAgent);
 
-                            state = CreateMAState(metaAgent, P.Constraints);
+                            state = CreateMAState(metaAgent, delegation, P.Constraints);
 
                             foundSolution = P.InvokeLowLevelSearch(metaAgent, state);
 
@@ -181,7 +181,7 @@ namespace MultiAgent.SearchClient.CBS
 
                     if (conflictedAgent is MetaAgent ma)
                     {
-                        state = CreateMAState(ma, A.Constraints);
+                        state = CreateMAState(ma, delegation, A.Constraints);
                     }
                     else
                     {
@@ -278,15 +278,32 @@ namespace MultiAgent.SearchClient.CBS
             return state;
         }
 
-        public static MAState CreateMAState(MetaAgent ma, HashSet<IConstraint> constraints)
+        public static MAState CreateMAState(MetaAgent ma, Dictionary<Agent, SAState> delegation, HashSet<IConstraint> constraints)
         {
-            var agents = ma.Agents;
-            var agentGoals = Level.AgentGoals
-                .Where(ag => ma.Agents.Exists(a => a.Number == ag.Number)).ToList();
-            var boxes = ma.Agents
-                .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxes[a]).ToList();
-            var boxGoals = ma.Agents
-                .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[a]).ToList();
+            var agents = new Dictionary<Agent, Position>();
+            var agentGoals = new List<Agent>();
+            var boxes = new Dictionary<Position, Box>();
+            var boxGoals = new List<Box>();
+            foreach (var agent in ma.Agents)
+            {
+                var previousState = delegation[agent];
+
+                agents.Add(agent, previousState.AgentPosition);
+                if (previousState.AgentGoal != null)
+                {
+                    agentGoals.Add(previousState.AgentGoal);
+                }
+
+                foreach (var previousStateBoxGoal in previousState.BoxGoals)
+                {
+                    boxGoals.Add(previousStateBoxGoal);
+                }
+
+                foreach (var (position, box) in previousState.PositionsOfBoxes)
+                {
+                    boxes.Add(position, box);
+                }
+            }
 
             return new MAState(agents, agentGoals, boxes, boxGoals, constraints);
         }
