@@ -84,60 +84,13 @@ namespace MultiAgent.SearchClient.CBS
 
                 if (Node.ShouldMerge(agent1, agent2))
                 {
-                    Console.Error.WriteLine($"Merging agent: {agent1.ReferenceAgent} and {agent2.ReferenceAgent}");
-                    var metaAgent = new MetaAgent();
-                    switch (agent1, agent2)
-                    {
-                        case (Agent a1, Agent a2):
-                            P.Solution.Remove(a1);
-                            P.Solution.Remove(a2);
+                    var metaAgent = CreateMetaAgent(agent1, agent2, P);
 
-                            metaAgent.Agents.Add(a1);
-                            metaAgent.Agents.Add(a2);
+                    // Remove constraints from internal conflicts
+                    P.RemoveInternalConstraints(metaAgent);
 
-                            break;
+                    var state = CreateMAState(metaAgent, P.Constraints);
 
-                        case (Agent a1, MetaAgent ma2):
-                            P.Solution.Remove(a1);
-                            P.Solution.Remove(ma2);
-
-                            metaAgent.Agents.AddRange(ma2.Agents);
-                            metaAgent.Agents.Add(a1);
-
-                            break;
-
-                        case (MetaAgent ma1, Agent a2):
-                            P.Solution.Remove(ma1);
-                            P.Solution.Remove(a2);
-
-                            metaAgent.Agents.AddRange(ma1.Agents);
-                            metaAgent.Agents.Add(a2);
-
-                            break;
-
-                        case (MetaAgent ma1, MetaAgent ma2):
-                            P.Solution.Remove(ma1);
-                            P.Solution.Remove(ma2);
-
-                            metaAgent.Agents.AddRange(ma1.Agents);
-                            metaAgent.Agents.AddRange(ma2.Agents);
-
-                            break;
-                    }
-
-                    // TODO: MAKE THIS BETTER, TO ONLY REMOVE INTERNAL CONFLICTS
-                    P.Constraints =
-                        new HashSet<Constraint>(); //P.Constraints.Where(c => !metaAgent.Agents.Contains(c.Agent)).ToHashSet();
-
-                    var agents = metaAgent.Agents;
-                    var agentGoals = Level.AgentGoals
-                        .Where(ag => metaAgent.Agents.Exists(a => a.Number == ag.Number)).ToList();
-                    var boxes = metaAgent.Agents
-                        .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxes[a]).ToList();
-                    var boxGoals = metaAgent.Agents
-                        .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[a]).ToList();
-
-                    var state = new MAState(agents, agentGoals, boxes, boxGoals, P.Constraints);
                     P.Solution.Add(metaAgent, GraphSearch.Search(state, new BestFirstFrontier())?.ToList());
 
                     if (P.Solution[metaAgent] != null)
@@ -173,15 +126,8 @@ namespace MultiAgent.SearchClient.CBS
                             P.Solution.Remove(metaAgent);
                             metaAgent.Agents.Add(mergeAgent);
 
-                            agents = metaAgent.Agents;
-                            agentGoals = Level.AgentGoals
-                                .Where(ag => metaAgent.Agents.Exists(a => a.Number == ag.Number)).ToList();
-                            boxes = metaAgent.Agents
-                                .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxes[a]).ToList();
-                            boxGoals = metaAgent.Agents
-                                .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[a]).ToList();
+                            state = CreateMAState(metaAgent, P.Constraints);
 
-                            state = new MAState(agents, agentGoals, boxes, boxGoals, P.Constraints);
                             P.Solution.Add(metaAgent, GraphSearch.Search(state, new BestFirstFrontier())?.ToList());
 
                             if (P.Solution[metaAgent] != null)
@@ -216,37 +162,11 @@ namespace MultiAgent.SearchClient.CBS
                 {
                     var A = new Node {Constraints = new HashSet<Constraint>(P.Constraints)};
 
-                    Constraint constraint;
-                    switch (conflict)
+                    var constraint = CreateConstraint(conflictedAgent, conflict);
+
+                    if (constraint == null)
                     {
-                        case PositionConflict positionConflict:
-                            constraint = new Constraint
-                            {
-                                Agent = conflictedAgent.ReferenceAgent,
-                                Position = positionConflict.Position,
-                                Time = positionConflict.Time,
-                            };
-                            break;
-
-                        case FollowConflict followConflict:
-                            constraint = new Constraint
-                            {
-                                Agent = conflictedAgent.ReferenceAgent,
-                                Position = followConflict.FollowerPosition,
-                                Time = conflictedAgent == followConflict.Follower
-                                    ? followConflict.FollowerTime
-                                    : followConflict.FollowerTime - 1,
-                            };
-
-                            if (constraint.Time == 0)
-                            {
-                                continue;
-                            }
-
-                            break;
-
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(conflict));
+                        continue;
                     }
 
                     A.Constraints.Add(constraint);
@@ -256,34 +176,15 @@ namespace MultiAgent.SearchClient.CBS
 
                     if (conflictedAgent is MetaAgent ma)
                     {
-                        var agents = ma.Agents;
-                        var agentGoals = Level.AgentGoals
-                            .Where(ag => ma.Agents.Exists(a => a.Number == ag.Number)).ToList();
-                        var boxes = ma.Agents
-                            .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxes[a]).ToList();
-                        var boxGoals = ma.Agents
-                            .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[a]).ToList();
-
-                        state = new MAState(agents, agentGoals, boxes, boxGoals, A.Constraints);
+                        state = CreateMAState(ma, A.Constraints);
                     }
                     else
                     {
-                        state = new SAState(
-                            conflictedAgent.ReferenceAgent,
-                            delegation[conflictedAgent.ReferenceAgent].AgentPosition,
-                            delegation[conflictedAgent.ReferenceAgent].AgentGoal,
-                            delegation[conflictedAgent.ReferenceAgent].PositionsOfBoxes,
-                            delegation[conflictedAgent.ReferenceAgent].BoxGoals,
-                            A.Constraints
-                        );
-
-                        ((SAState) state).RelevantBoxToSolveGoal =
-                            delegation[conflictedAgent.ReferenceAgent].RelevantBoxToSolveGoal;
-                        ((SAState) state).CurrentBoxGoal = delegation[conflictedAgent.ReferenceAgent].CurrentBoxGoal;
+                        state = CreateSAState(conflictedAgent.ReferenceAgent,
+                            delegation[conflictedAgent.ReferenceAgent], A.Constraints);
                     }
 
-                    A.Solution[conflictedAgent] =
-                        GraphSearch.Search(state, new BestFirstFrontier())?.ToList();
+                    A.Solution[conflictedAgent] = GraphSearch.Search(state, new BestFirstFrontier())?.ToList();
 
                     // Agent found a solution
                     if (A.Solution[conflictedAgent] != null)
@@ -361,6 +262,116 @@ namespace MultiAgent.SearchClient.CBS
 
             return null;
         }
+
+        public static SAState CreateSAState(Agent agent, SAState previousState, HashSet<Constraint> constraints)
+        {
+            var state = new SAState(agent, previousState.AgentPosition, previousState.AgentGoal,
+                previousState.PositionsOfBoxes, previousState.BoxGoals, constraints);
+
+            state.RelevantBoxToSolveGoal = previousState.RelevantBoxToSolveGoal;
+            state.CurrentBoxGoal = previousState.CurrentBoxGoal;
+            return state;
+        }
+
+        public static MAState CreateMAState(MetaAgent ma, HashSet<Constraint> constraints)
+        {
+            var agents = ma.Agents;
+            var agentGoals = Level.AgentGoals
+                .Where(ag => ma.Agents.Exists(a => a.Number == ag.Number)).ToList();
+            var boxes = ma.Agents
+                .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxes[a]).ToList();
+            var boxGoals = ma.Agents
+                .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[a]).ToList();
+
+            return new MAState(agents, agentGoals, boxes, boxGoals, constraints);
+        }
+
+        private static MetaAgent CreateMetaAgent(IAgent agent1, IAgent agent2, Node P)
+        {
+            Console.Error.WriteLine($"Merging agent: {agent1.ReferenceAgent} and {agent2.ReferenceAgent}");
+            MetaAgent metaAgent = new MetaAgent();
+            switch (agent1, agent2)
+            {
+                case (Agent a1, Agent a2):
+                    P.Solution.Remove(a1);
+                    P.Solution.Remove(a2);
+
+                    metaAgent.Agents.Add(a1);
+                    metaAgent.Agents.Add(a2);
+
+                    break;
+
+                case (Agent a1, MetaAgent ma2):
+                    P.Solution.Remove(a1);
+                    P.Solution.Remove(ma2);
+
+                    metaAgent.Agents.AddRange(ma2.Agents);
+                    metaAgent.Agents.Add(a1);
+
+                    break;
+
+                case (MetaAgent ma1, Agent a2):
+                    P.Solution.Remove(ma1);
+                    P.Solution.Remove(a2);
+
+                    metaAgent.Agents.AddRange(ma1.Agents);
+                    metaAgent.Agents.Add(a2);
+
+                    break;
+
+                case (MetaAgent ma1, MetaAgent ma2):
+                    P.Solution.Remove(ma1);
+                    P.Solution.Remove(ma2);
+
+                    metaAgent.Agents.AddRange(ma1.Agents);
+                    metaAgent.Agents.AddRange(ma2.Agents);
+
+                    break;
+            }
+
+            return metaAgent;
+        }
+
+        private static Constraint CreateConstraint(IAgent conflictedAgent, IConflict conflict)
+        {
+            Constraint constraint;
+            switch (conflict)
+            {
+                case PositionConflict positionConflict:
+                    constraint = new Constraint
+                    {
+                        Agent = conflictedAgent.ReferenceAgent,
+                        Position = positionConflict.Position,
+                        Time = positionConflict.Time,
+                        Conflict = conflict
+                    };
+                    break;
+
+                case FollowConflict followConflict:
+                    constraint = new Constraint
+                    {
+                        Agent = conflictedAgent.ReferenceAgent,
+                        Position = followConflict.FollowerPosition,
+                        Time = conflictedAgent == followConflict.Follower
+                            ? followConflict.FollowerTime
+                            : followConflict.FollowerTime - 1,
+                        Conflict = conflict
+                    };
+
+                    if (constraint.Time == 0)
+                    {
+                        return null;
+                    }
+
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(conflict));
+            }
+
+            return constraint;
+        }
+
 
         private static Dictionary<Agent, List<SAStep>> ExtractMoves(Node node)
         {

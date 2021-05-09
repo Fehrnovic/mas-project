@@ -33,6 +33,11 @@ namespace MultiAgent.SearchClient.CBS
             return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
         }
 
+        public void RemoveInternalConstraints(MetaAgent metaAgent)
+        {
+            Constraints = Constraints.Where(c => c.Conflict.ConflictedAgents.Except(metaAgent.Agents).Any()).ToHashSet();
+        }
+
         public IConflict GetConflict(Dictionary<Agent, bool> finishedAgents)
         {
             var maxSolutionLength = Solution.Values.Max(a => a.Count);

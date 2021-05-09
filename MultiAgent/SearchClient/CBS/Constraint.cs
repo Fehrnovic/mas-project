@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.CBS
@@ -8,6 +9,7 @@ namespace MultiAgent.SearchClient.CBS
         public Agent Agent { get; set; }
         public Position Position;
         public int Time { get; set; }
+        public IConflict Conflict { get; set; }
 
         public bool Equals(Constraint other)
         {
