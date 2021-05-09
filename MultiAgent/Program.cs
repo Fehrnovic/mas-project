@@ -15,6 +15,7 @@ namespace MultiAgent
     class Program
     {
         public static readonly Stopwatch Timer = new();
+        public static readonly int ShouldPrint = 1;
 
         public static string[] Args;
 
@@ -216,8 +217,11 @@ namespace MultiAgent
 
                 var minSolution = availableAgents.Min(a => a.Value.Count);
 
-                Console.Error.WriteLine(
-                    $"Found sub-goal solution with min solution of {minSolution} in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+                if (Program.ShouldPrint >= 1)
+                {
+                    Console.Error.WriteLine(
+                        $"Found sub-goal solution with min solution of {minSolution} in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+                }
 
                 // No actions will be taken- just update sub-goals.
                 if (minSolution <= 1)

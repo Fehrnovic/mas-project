@@ -23,7 +23,11 @@ namespace MultiAgent.SearchClient.Search
             {
                 if (frontier.IsEmpty())
                 {
-                    Console.Error.WriteLine($"NO SOLUTION FOR {((SAState) initialState).Agent.Number}");
+                    if (Program.ShouldPrint >= 5)
+                    {
+                        Console.Error.WriteLine($"NO SOLUTION FOR {((SAState) initialState).Agent.Number}");
+                    }
+
                     return null;
                 }
 
@@ -34,8 +38,15 @@ namespace MultiAgent.SearchClient.Search
                 {
                     if (++iterations % 100000 == 0)
                     {
-                        PrintSearchStatus(exploredStates, frontier);
-                        // Console.Error.WriteLine($"{state}");
+                        if (Program.ShouldPrint >= 2)
+                        {
+                            PrintSearchStatus(exploredStates, frontier);
+                        }
+
+                        if (Program.ShouldPrint >= 6)
+                        {
+                            Console.Error.WriteLine($"{state}");
+                        }
                     }
                 }
 

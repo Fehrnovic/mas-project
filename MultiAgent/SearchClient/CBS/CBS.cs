@@ -27,7 +27,11 @@ namespace MultiAgent.SearchClient.CBS
 
             foreach (var agent in Level.Agents)
             {
-                Console.Error.Write(agent.Number);
+                if (Program.ShouldPrint >= 5)
+                {
+                    Console.Error.Write(agent.Number);
+                }
+
                 root.Solution[agent] = GraphSearch.Search(delegation[agent], new BestFirstFrontier())?.ToList();
             }
 
@@ -38,8 +42,11 @@ namespace MultiAgent.SearchClient.CBS
             {
                 if (++Counter % 100 == 0)
                 {
-                    Console.Error.WriteLine(
-                        $"OPEN has size : {OPEN.Values.Count}. Time spent: {timer.ElapsedMilliseconds / 1000.0} s");
+                    if (Program.ShouldPrint >= 3)
+                    {
+                        Console.Error.WriteLine(
+                            $"OPEN has size : {OPEN.Values.Count}. Time spent: {timer.ElapsedMilliseconds / 1000.0} s");
+                    }
                 }
 
                 var minCost = OPEN.Keys.Min();
@@ -54,11 +61,18 @@ namespace MultiAgent.SearchClient.CBS
                 var conflict = P.GetConflict(finishedAgents);
                 if (conflict == null)
                 {
-                    Console.Error.WriteLine();
+                    if (Program.ShouldPrint >= 5)
+                    {
+                        Console.Error.WriteLine();
+                    }
+
                     return ExtractMoves(P);
                 }
 
-                Console.Error.Write('.');
+                if (Program.ShouldPrint >= 5)
+                {
+                    Console.Error.Write('.');
+                }
                 // CONFLICT!
 
                 // Update Conflict Matrix
@@ -200,8 +214,7 @@ namespace MultiAgent.SearchClient.CBS
 
                 foreach (var conflictedAgent in conflict.ConflictedAgents)
                 {
-                    var A = new Node();
-                    A.Constraints = new HashSet<Constraint>(P.Constraints);
+                    var A = new Node {Constraints = new HashSet<Constraint>(P.Constraints)};
 
                     Constraint constraint;
                     switch (conflict)
@@ -266,8 +279,7 @@ namespace MultiAgent.SearchClient.CBS
 
                         ((SAState) state).RelevantBoxToSolveGoal =
                             delegation[conflictedAgent.ReferenceAgent].RelevantBoxToSolveGoal;
-                        ((SAState) state).CurrentBoxGoal =
-                            delegation[conflictedAgent.ReferenceAgent].CurrentBoxGoal;
+                        ((SAState) state).CurrentBoxGoal = delegation[conflictedAgent.ReferenceAgent].CurrentBoxGoal;
                     }
 
                     A.Solution[conflictedAgent] =
