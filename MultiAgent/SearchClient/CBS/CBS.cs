@@ -27,6 +27,7 @@ namespace MultiAgent.SearchClient.CBS
 
             foreach (var agent in Level.Agents)
             {
+                Console.Error.Write(agent.Number);
                 root.Solution[agent] = GraphSearch.Search(delegation[agent], new BestFirstFrontier())?.ToList();
             }
 
@@ -53,9 +54,11 @@ namespace MultiAgent.SearchClient.CBS
                 var conflict = P.GetConflict(finishedAgents);
                 if (conflict == null)
                 {
+                    Console.Error.WriteLine();
                     return ExtractMoves(P);
                 }
 
+                Console.Error.Write('.');
                 // CONFLICT!
 
                 // Update Conflict Matrix

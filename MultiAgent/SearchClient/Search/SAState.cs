@@ -304,7 +304,7 @@ namespace MultiAgent.SearchClient.Search
             {
                 if (Constraints.Any() && Constraints.Max(c => c.Time) > Time)
                 {
-                    exploredStates.Clear();
+                    // exploredStates.Clear();
                     return false;
                 }
 
@@ -395,15 +395,15 @@ namespace MultiAgent.SearchClient.Search
             }
 
             // TODO: Optimization
-            // return AgentPosition == state.AgentPosition && Time == state.Time;
-            var constraints = GetRelevantConstraints();
-            var constraints2 = state.GetRelevantConstraints();
+            return AgentPosition == state.AgentPosition && Time == state.Time;
+            // var constraints = GetRelevantConstraints();
+            // var constraints2 = state.GetRelevantConstraints();
 
-            var isEqual = AgentPosition == state.AgentPosition
-                          && constraints.Count == constraints2.Count
-                          && !constraints.Except(constraints2).Any();
+            // var isEqual = AgentPosition == state.AgentPosition
+                          // && constraints.Count == constraints2.Count
+                          // && !constraints.Except(constraints2).Any();
 
-            return isEqual;
+            // return isEqual;
         }
 
         public override int GetHashCode()

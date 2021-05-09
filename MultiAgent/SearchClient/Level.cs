@@ -289,11 +289,11 @@ namespace MultiAgent.SearchClient
             Console.Error.WriteLine("Distance map initialized");
 
             Console.Error.WriteLine((double) WallCount / ((double) Rows * (double) Columns));
-            if ((double) WallCount / ((double) Rows * (double) Columns) < 0.2)
-            {
-                Console.Error.WriteLine("Does not use bfs");
-                UseBfs = false;
-            }
+            // if ((double) WallCount / ((double) Rows * (double) Columns) < 0.2)
+            // {
+            //     Console.Error.WriteLine("Does not use bfs");
+            //     UseBfs = false;
+            // }
 
             Console.Error.WriteLine("Initialize delegation data");
             LevelDelegationHelper.InitializeDelegationData();

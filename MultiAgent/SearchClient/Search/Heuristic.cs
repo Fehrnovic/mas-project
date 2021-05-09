@@ -64,9 +64,9 @@ namespace MultiAgent.SearchClient.Search
                 {
                     boxDistance += Level.GetDistanceBetweenPosition(state.CurrentBoxGoal.GetInitialLocation(),
                         state.GetPositionOfBox(state.RelevantBoxToSolveGoal));
-                    // boxDistance +=
-                    //     Level.GetDistanceBetweenPosition(state.GetPositionOfBox(state.RelevantBoxToSolveGoal),
-                    //         state.AgentPosition);
+                    boxDistance +=
+                        Level.GetDistanceBetweenPosition(state.GetPositionOfBox(state.RelevantBoxToSolveGoal),
+                            state.AgentPosition);
                 }
 
                 if (state.AgentGoal != null)
@@ -75,7 +75,7 @@ namespace MultiAgent.SearchClient.Search
                         Level.GetDistanceBetweenPosition(state.AgentGoal.GetInitialLocation(), state.AgentPosition);
                 }
 
-                return solvedGoalsToBoxDistance + boxDistance + agentDistance;
+                return solvedGoalsToBoxDistance + boxDistance + agentDistance + state.Time;
             }
             else
             {

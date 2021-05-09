@@ -33,7 +33,9 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MAthomasAppartment_bluecyanpurple.lvl");
+            Level.ParseLevel("MAbispebjerg.lvl");
+
+            int amountOfSubGoals = Level.BoxGoals.Count * 2 + Level.AgentGoals.Count;
 
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
