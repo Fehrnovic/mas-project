@@ -4,7 +4,7 @@ set -e
 # Set the memory, frontier type, level, speed and timeout
 MEMORY="-Xmx16g"
 FRONTIER="-bfs"
-LEVEL="levels/MAbispebjerg.lvl"
+LEVEL="levels/MAchallenge.lvl"
 SPEED=250
 TIMEOUT=1800
 

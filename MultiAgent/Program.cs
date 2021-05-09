@@ -15,7 +15,7 @@ namespace MultiAgent
     class Program
     {
         public static readonly Stopwatch Timer = new();
-        public static readonly int ShouldPrint = 1;
+        public static readonly int ShouldPrint = 6;
 
         public static string[] Args;
 
@@ -164,24 +164,37 @@ namespace MultiAgent
                                 ? new List<Position>()
                                 : state.PositionsOfBoxes.Keys.ToList()).ToList();
 
-                        var freeNeighborPositionNodes = Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
-                                closestBoxPosition.Value.Column]
-                            .OutgoingNodes.Where(node =>
-                                !allBoxPositions.Exists(pos => pos.Column == node.Column && node.Row == pos.Row))
-                            .ToList();
+                        var neighborPositions = Level.Graph
+                            .NodeGrid[closestBoxPosition.Value.Row, closestBoxPosition.Value.Column].OutgoingNodes
+                            .Select(n => new Position(n.Row, n.Column)).ToList();
 
-                        var neighborPositionNodes = freeNeighborPositionNodes.Any()
-                            ? freeNeighborPositionNodes
-                            : Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
-                                    closestBoxPosition.Value.Column]
-                                .OutgoingNodes;
-                        // TODO: optimize neighbor solution
-                        var neighborPositionNode = neighborPositionNodes
-                            .OrderBy(g => Level.GetDistanceBetweenPosition(new Position(g.Row, g.Column),
-                                previousSolutionStates[agent].AgentPosition))
-                            .FirstOrDefault(g => !previousSolutionStates[agent].BoxGoals.Exists(b =>
+                        var freeNeighborPositions = neighborPositions.Except(allBoxPositions).ToList();
+
+                        neighborPositions = freeNeighborPositions.Any() ? freeNeighborPositions : neighborPositions;
+
+                        var neighborPositionNode = neighborPositions.FirstOrDefault(g => !previousSolutionStates[agent]
+                            .BoxGoals.Exists(b =>
                                 b.GetInitialLocation().Row == g.Row &&
                                 b.GetInitialLocation().Column == g.Column));
+
+                        // var freeNeighborPositionNodes = Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
+                        //         closestBoxPosition.Value.Column]
+                        //     .OutgoingNodes.Where(node =>
+                        //         !allBoxPositions.Exists(pos => pos.Column == node.Column && node.Row == pos.Row))
+                        //     .ToList();
+                        //
+                        // var neighborPositionNodes = freeNeighborPositionNodes.Any()
+                        //     ? freeNeighborPositionNodes
+                        //     : Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
+                        //             closestBoxPosition.Value.Column]
+                        //         .OutgoingNodes;
+                        // // TODO: optimize neighbor solution
+                        // var neighborPositionNode = neighborPositionNodes
+                        //     .OrderBy(g => Level.GetDistanceBetweenPosition(new Position(g.Row, g.Column),
+                        //         previousSolutionStates[agent].AgentPosition))
+                        //     .FirstOrDefault(g => !previousSolutionStates[agent].BoxGoals.Exists(b =>
+                        //         b.GetInitialLocation().Row == g.Row &&
+                        //         b.GetInitialLocation().Column == g.Column));
 
                         Agent agentGoal;
                         // If neighbor position contains a box goal for this agent-
