@@ -256,25 +256,27 @@ namespace MultiAgent
 
             Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
+            var sortedAgentSolutions = agentSolutionsSteps.OrderBy(a => a.Key.Number).ToList();
+
             // Find the max length solution and run solution
             for (var i = 0; i < agentSolutionsSteps.Max(a => a.Value.Count); i++)
             {
                 var counter = 0;
                 // Foreach agent, get their step of the current i index
-                foreach (var stepsList in agentSolutionsSteps.Values)
+                foreach (var (agent, stepsList) in sortedAgentSolutions)
                 {
                     // If still has steps print those- else print no-op
                     Console.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
-                    // Console.Error.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
+                    Console.Error.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
                     if (counter++ != agentSolutionsSteps.Count - 1)
                     {
                         Console.Write("|");
-                        // Console.Error.Write("|");
+                        Console.Error.Write("|");
                     }
                 }
 
                 Console.WriteLine();
-                // Console.Error.WriteLine();
+                Console.Error.WriteLine();
             }
         }
 
