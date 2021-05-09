@@ -180,25 +180,6 @@ namespace MultiAgent
                                     b.GetInitialLocation().Row == g.Row &&
                                     b.GetInitialLocation().Column == g.Column));
 
-                        // var freeNeighborPositionNodes = Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
-                        //         closestBoxPosition.Value.Column]
-                        //     .OutgoingNodes.Where(node =>
-                        //         !allBoxPositions.Exists(pos => pos.Column == node.Column && node.Row == pos.Row))
-                        //     .ToList();
-                        //
-                        // var neighborPositionNodes = freeNeighborPositionNodes.Any()
-                        //     ? freeNeighborPositionNodes
-                        //     : Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
-                        //             closestBoxPosition.Value.Column]
-                        //         .OutgoingNodes;
-                        // // TODO: optimize neighbor solution
-                        // var neighborPositionNode = neighborPositionNodes
-                        //     .OrderBy(g => Level.GetDistanceBetweenPosition(new Position(g.Row, g.Column),
-                        //         previousSolutionStates[agent].AgentPosition))
-                        //     .FirstOrDefault(g => !previousSolutionStates[agent].BoxGoals.Exists(b =>
-                        //         b.GetInitialLocation().Row == g.Row &&
-                        //         b.GetInitialLocation().Column == g.Column));
-
                         Agent agentGoal;
                         // If neighbor position contains a box goal for this agent-
                         if (neighborPositionNode == null)
@@ -229,7 +210,66 @@ namespace MultiAgent
                     }
                     else
                     {
-                        // All box goals has been satisfied. Solve agent goal now.
+                        // All box goals has been satisfied
+                        // Is there any agents this agent can help?
+                        Agent agentToHelp = null;
+                        foreach (var otherAgent in Level.Agents.Where(a => a.Color == agent.Color))
+                        {
+                            if (otherAgent == agent)
+                            {
+                                continue;
+                            }
+
+                            if (missingBoxGoals[otherAgent].Count > 1)
+                            {
+                                agentToHelp = otherAgent;
+                                break;
+                            }
+                        }
+
+                        if (agentToHelp != null)
+                        {
+                            Console.Error.WriteLine($"Agent {agent} can help {agentToHelp}");
+
+                            // Take first goal to help
+                            var goalToHelpWith = missingBoxGoals[agentToHelp].Dequeue();
+
+                            // Find a box that can help solve the goal
+                            var (positionOfBoxToHelpSolve, boxToHelpSolve) = previousSolutionStates[agentToHelp]
+                                .PositionsOfBoxes.First(kv =>
+                                    kv.Value.Letter == goalToHelpWith.Letter && !usedBoxes.Contains(kv.Value));
+
+
+                            // Remove the box from the agent you're helping
+                            previousSolutionStates[agentToHelp].PositionsOfBoxes.Remove(positionOfBoxToHelpSolve);
+
+                            // Add the box to your boxes
+                            previousSolutionStates[agent].PositionsOfBoxes
+                                .Add(positionOfBoxToHelpSolve, boxToHelpSolve);
+
+                            var agentGoal = new Agent(agent.Number, agent.Color,
+                                previousSolutionStates[agent].AgentPosition);
+
+                            var agentToBoxState = new SAState(
+                                agent,
+                                previousSolutionStates[agent].AgentPosition,
+                                agentGoal,
+                                previousSolutionStates[agent].PositionsOfBoxes,
+                                previousSolutionStates[agent].BoxGoals,
+                                new HashSet<IConstraint>()
+                            );
+
+                            // Set the box goal as the next sub-goal to solve
+                            currentBoxGoal[agent] = goalToHelpWith;
+                            currentMostRelevantBox[agent] = boxToHelpSolve;
+
+                            delegation.Add(agent, agentToBoxState);
+                            finishedAgents[agent] = false;
+
+                            continue;
+                        }
+
+                        // . Solve agent goal now.
                         // OR No remaining gaols. Create a dummy state, with all goals, such that CBS won't destroy goal state.
                         var state = new SAState(
                             agent,
@@ -278,7 +318,7 @@ namespace MultiAgent
                         {
                             agentSolutionsSteps[agent].Add(step);
                         }
-                    
+
                         continue;
                     }
                     // TODO: Convert all MASteps to SASteps
@@ -308,9 +348,6 @@ namespace MultiAgent
                         }
                     }
                 }
-
-                // TODO: Update level delegation
-                
             }
 
             Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
