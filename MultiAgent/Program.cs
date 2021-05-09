@@ -34,7 +34,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MAbispebjerg.lvl");
+            Level.ParseLevel("MAchallenge.lvl");
 
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
@@ -172,10 +172,13 @@ namespace MultiAgent
 
                         neighborPositions = freeNeighborPositions.Any() ? freeNeighborPositions : neighborPositions;
 
-                        var neighborPositionNode = neighborPositions.FirstOrDefault(g => !previousSolutionStates[agent]
-                            .BoxGoals.Exists(b =>
-                                b.GetInitialLocation().Row == g.Row &&
-                                b.GetInitialLocation().Column == g.Column));
+                        var neighborPositionNode = neighborPositions
+                            .OrderBy(p =>
+                                Level.GetDistanceBetweenPosition(p, previousSolutionStates[agent].AgentPosition))
+                            .FirstOrDefault(g => !previousSolutionStates[agent]
+                                .BoxGoals.Exists(b =>
+                                    b.GetInitialLocation().Row == g.Row &&
+                                    b.GetInitialLocation().Column == g.Column));
 
                         // var freeNeighborPositionNodes = Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
                         //         closestBoxPosition.Value.Column]
@@ -259,16 +262,10 @@ namespace MultiAgent
 
                 var minSolution = availableAgents.Min(a => a.Value.Count);
 
-                if (Program.ShouldPrint >= 1)
+                if (ShouldPrint >= 1)
                 {
                     Console.Error.WriteLine(
                         $"Found sub-goal solution with min solution of {minSolution} in {Timer.ElapsedMilliseconds / 1000.0} seconds");
-                }
-
-                // No actions will be taken- just update sub-goals.
-                if (minSolution <= 1)
-                {
-                    continue;
                 }
 
                 // Retrieve the state of the index of the mininum solution and set as previous solution
@@ -281,7 +278,7 @@ namespace MultiAgent
                         {
                             agentSolutionsSteps[agent].Add(step);
                         }
-
+                    
                         continue;
                     }
                     // TODO: Convert all MASteps to SASteps
@@ -293,13 +290,27 @@ namespace MultiAgent
                     // Solutions that are not equal to the minimum solution are not finished with their current goal.
                     finishedSubGoal[agent] = solution[agent].Count == minSolution;
 
-                    // For all steps take steps up to minimum solution, add to the agent solution steps
                     var steps = solution[agent].Skip(1).Take(agentMinimumLength);
-                    foreach (var step in steps)
+
+                    if (agentMinimumLength == 0)
                     {
-                        agentSolutionsSteps[agent].Add(step);
+                        for (var i = 0; i < minSolution - 1; i++)
+                        {
+                            agentSolutionsSteps[agent].Add(new SAStep(agentSolutionsSteps[agent].Last()));
+                        }
+                    }
+                    else
+                    {
+                        // For all steps take steps up to minimum solution, add to the agent solution steps
+                        foreach (var step in steps)
+                        {
+                            agentSolutionsSteps[agent].Add(step);
+                        }
                     }
                 }
+
+                // TODO: Update level delegation
+                
             }
 
             Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
