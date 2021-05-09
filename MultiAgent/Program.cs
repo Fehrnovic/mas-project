@@ -36,7 +36,7 @@ namespace MultiAgent
             // Initialize the level
             Level.ParseLevel("MAbispebjerg.lvl");
 
-            int amountOfSubGoals = Level.BoxGoals.Count * 2 + Level.AgentGoals.Count;
+            var amountOfSubGoals = Level.BoxGoals.Count * 2 + Level.AgentGoals.Count;
 
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
@@ -161,12 +161,26 @@ namespace MultiAgent
 
                         usedBoxes.Add(closestBox);
 
+                        // TODO: optimize neighbor solution
                         var neighborPositionNode = Level.Graph.NodeGrid[closestBoxPosition.Value.Row,
                                 closestBoxPosition.Value.Column]
-                            .OutgoingNodes.First();
+                            .OutgoingNodes.FirstOrDefault(g => !previousSolutionStates[agent].BoxGoals.Exists(b =>
+                                b.GetInitialLocation().Row == g.Row &&
+                                b.GetInitialLocation().Column == g.Column));
 
-                        var agentGoal = new Agent(agent.Number, agent.Color,
-                            new Position(neighborPositionNode.Row, neighborPositionNode.Column));
+                        Agent agentGoal;
+                        // If neighbor position contains a box goal for this agent-
+                        if (neighborPositionNode == null)
+                        {
+                            agentGoal = new Agent(agent.Number, agent.Color,
+                                previousSolutionStates[agent].AgentPosition);
+                        }
+                        else
+                        {
+                            agentGoal = new Agent(agent.Number, agent.Color,
+                                new Position(neighborPositionNode.Row, neighborPositionNode.Column));
+                        }
+
                         var agentToBoxState = new SAState(
                             agent,
                             previousSolutionStates[agent].AgentPosition,

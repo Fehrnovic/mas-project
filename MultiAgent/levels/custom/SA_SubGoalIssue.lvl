@@ -1,0 +1,25 @@
+#domain
+hospital
+#levelname
+SA_SubGoalIssue
+#colors
+blue: 0, A, B
+#initial
++++++++++++++
+++          +
++B          +
+++          +
++           +
++           +
++     0A    +
++++++++++++++
+#goal
++++++++++++++
+++          +
++ A        B+
+++          +
++           +
++           +
++           +
++++++++++++++
+#end
