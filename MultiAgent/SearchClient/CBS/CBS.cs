@@ -278,15 +278,21 @@ namespace MultiAgent.SearchClient.CBS
             return state;
         }
 
-        public static MAState CreateMAState(MetaAgent ma, Dictionary<Agent, SAState> delegation, HashSet<IConstraint> constraints)
+        public static MAState CreateMAState(MetaAgent ma, Dictionary<Agent, SAState> delegation,
+            HashSet<IConstraint> constraints)
         {
             var agents = new Dictionary<Agent, Position>();
             var agentGoals = new List<Agent>();
             var boxes = new Dictionary<Position, Box>();
             var boxGoals = new List<Box>();
+            var agentToRelevantBox = new Dictionary<Agent, Box>();
+            var agentToRelevantGoal = new Dictionary<Agent, Box>();
             foreach (var agent in ma.Agents)
             {
                 var previousState = delegation[agent];
+
+                agentToRelevantGoal.Add(agent, previousState.CurrentBoxGoal);
+                agentToRelevantBox.Add(agent, previousState.RelevantBoxToSolveGoal);
 
                 agents.Add(agent, previousState.AgentPosition);
                 if (previousState.AgentGoal != null)
@@ -305,7 +311,8 @@ namespace MultiAgent.SearchClient.CBS
                 }
             }
 
-            return new MAState(agents, agentGoals, boxes, boxGoals, constraints);
+            return new MAState(agents, agentGoals, boxes, boxGoals, constraints, agentToRelevantGoal,
+                agentToRelevantBox);
         }
 
         private static MetaAgent CreateMetaAgent(IAgent agent1, IAgent agent2, Node P)

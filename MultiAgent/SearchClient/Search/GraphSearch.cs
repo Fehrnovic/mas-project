@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using MultiAgent.SearchClient.CBS;
 
 namespace MultiAgent.SearchClient.Search
 {
@@ -12,6 +14,29 @@ namespace MultiAgent.SearchClient.Search
 
         public static IEnumerable<IStep> Search(IState initialState, IFrontier frontier)
         {
+            if (initialState is SAState saState)
+            {
+                if (saState.Constraints.Any(c =>
+                {
+                    if (c is Constraint constraint)
+                    {
+                        var constrainedPosition = constraint.Position;
+                        var agentToPositionTime =
+                            Level.GetDistanceBetweenPosition(saState.AgentPosition, constrainedPosition);
+
+                        if (agentToPositionTime > constraint.Time + 1)
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }))
+                {
+                    return null;
+                }
+            }
+
             Timer.Restart();
 
             var iterations = 0;

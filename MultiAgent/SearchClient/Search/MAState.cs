@@ -20,6 +20,9 @@ namespace MultiAgent.SearchClient.Search
         public readonly Dictionary<Position, Agent> PositionsOfAgents;
         public readonly Dictionary<Position, Box> PositionsOfBoxes;
 
+        public readonly Dictionary<Agent, Box> AgentToCurrentGoal;
+        public readonly Dictionary<Agent, Box> AgentToRelevantBox;
+
         public Dictionary<Agent, Action> JointActions;
 
         public MAState Parent;
@@ -56,13 +59,17 @@ namespace MultiAgent.SearchClient.Search
 
         public MAState(Dictionary<Agent, Position> agents, List<Agent> agentGoals, Dictionary<Position, Box> boxes,
             List<Box> boxGoals,
-            HashSet<IConstraint> constraints)
+            HashSet<IConstraint> constraints, Dictionary<Agent, Box> agentToCurrentBoxGoal,
+            Dictionary<Agent, Box> agentToRelevantBox)
         {
             Agents = agents.Keys.ToList();
             AgentGoals = agentGoals;
 
             Boxes = boxes.Values.ToList();
             BoxGoals = boxGoals;
+
+            AgentToCurrentGoal = agentToCurrentBoxGoal;
+            AgentToRelevantBox = agentToRelevantBox;
 
             AgentPositions = new Dictionary<Agent, Position>(Agents.Count);
             PositionsOfAgents = new Dictionary<Position, Agent>(Agents.Count);
@@ -93,6 +100,8 @@ namespace MultiAgent.SearchClient.Search
             AgentGoals = parent.AgentGoals;
             AgentPositions = new Dictionary<Agent, Position>(parent.Agents.Count);
             PositionsOfAgents = new Dictionary<Position, Agent>(parent.Agents.Count);
+            AgentToCurrentGoal = parent.AgentToCurrentGoal;
+            AgentToRelevantBox = parent.AgentToRelevantBox;
             foreach (var (agentPosition, agent) in parent.PositionsOfAgents)
             {
                 AgentPositions.Add(agent, agentPosition);
@@ -567,7 +576,6 @@ namespace MultiAgent.SearchClient.Search
 
             if (Constraints.Any() && Constraints.Max(c => c.Relevant(Time)))
             {
-                exploredStates.Clear();
                 return false;
             }
 
@@ -662,7 +670,14 @@ namespace MultiAgent.SearchClient.Search
                 }
             }
 
-            return true;
+            return Time == state.Time;
+        }
+
+        public Position GetPositionOfBox(Box box)
+        {
+            var positionToBox = PositionsOfBoxes.First(pair => pair.Value == box);
+
+            return positionToBox.Key;
         }
 
         public override int GetHashCode()
@@ -687,6 +702,8 @@ namespace MultiAgent.SearchClient.Search
                 result = prime * result + (((boxPosition.Row + 1) * 41) * Level.Rows + (boxPosition.Column + 1) * 62) *
                     box.Letter;
             }
+
+            result = prime * result + Time;
 
             Hash = result;
 

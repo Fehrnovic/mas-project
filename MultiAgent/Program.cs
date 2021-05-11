@@ -376,11 +376,10 @@ namespace MultiAgent
                         }
                     }
 
-                    var dummyState = new MAState(agents, agentGoals, boxes, boxGoals, new HashSet<IConstraint>());
+                    var dummyState = new MAState(agents, agentGoals, boxes, boxGoals, new HashSet<IConstraint>(),
+                        new Dictionary<Agent, Box>(), new Dictionary<Agent, Box>());
                     Console.Error.WriteLine(dummyState.ToString());
                 }
-
-
             }
 
             Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
