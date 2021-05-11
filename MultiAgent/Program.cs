@@ -15,7 +15,7 @@ namespace MultiAgent
     class Program
     {
         public static readonly Stopwatch Timer = new();
-        public static readonly int ShouldPrint = 6;
+        public static readonly int ShouldPrint = 2;
 
         public static string[] Args;
 
@@ -348,6 +348,39 @@ namespace MultiAgent
                         }
                     }
                 }
+
+                if (ShouldPrint >= 2)
+                {
+                    var agents = new Dictionary<Agent, Position>();
+                    var agentGoals = new List<Agent>();
+                    var boxes = new Dictionary<Position, Box>();
+                    var boxGoals = new List<Box>();
+                    foreach (var agent in Level.Agents)
+                    {
+                        var previousState = delegation[agent];
+
+                        agents.Add(agent, previousState.AgentPosition);
+                        if (previousState.AgentGoal != null)
+                        {
+                            agentGoals.Add(previousState.AgentGoal);
+                        }
+
+                        foreach (var previousStateBoxGoal in previousState.BoxGoals)
+                        {
+                            boxGoals.Add(previousStateBoxGoal);
+                        }
+
+                        foreach (var (position, box) in previousState.PositionsOfBoxes)
+                        {
+                            boxes.Add(position, box);
+                        }
+                    }
+
+                    var dummyState = new MAState(agents, agentGoals, boxes, boxGoals, new HashSet<IConstraint>());
+                    Console.Error.WriteLine(dummyState.ToString());
+                }
+
+
             }
 
             Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
