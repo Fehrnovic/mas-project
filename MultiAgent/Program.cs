@@ -48,6 +48,7 @@ namespace MultiAgent
             var currentBoxGoal = new Dictionary<Agent, Box>(Level.Agents.Count);
             var currentMostRelevantBox = new Dictionary<Agent, Box>(Level.Agents.Count); // Use to guide agent
             var finishedAgents = new Dictionary<Agent, bool>(Level.Agents.Count);
+            var aboutToFinishAgents = new Dictionary<Agent, bool>(Level.Agents.Count);
             var finishedSubGoal = new Dictionary<Agent, bool>(Level.Agents.Count);
             var missingBoxGoals = new Dictionary<Agent, Queue<Box>>(Level.Agents.Count);
             var agentSolutionsSteps = new Dictionary<Agent, List<SAStep>>(Level.Agents.Count);
@@ -64,6 +65,7 @@ namespace MultiAgent
                 currentBoxGoal.Add(agent, null);
                 currentMostRelevantBox.Add(agent, null);
                 finishedAgents.Add(agent, false);
+                aboutToFinishAgents.Add(agent, false);
                 finishedSubGoal.Add(agent, true);
                 agentSolutionsSteps.Add(agent, new List<SAStep>());
                 previousSolutionStates.Add(agent, new SAState(
@@ -281,7 +283,7 @@ namespace MultiAgent
                             new HashSet<IConstraint>()
                         );
 
-                        finishedAgents[agent] = true;
+                        aboutToFinishAgents[agent] = true;
 
                         delegation.Add(agent, state);
                     }
@@ -330,6 +332,12 @@ namespace MultiAgent
 
                     // Solutions that are not equal to the minimum solution are not finished with their current goal.
                     finishedSubGoal[agent] = solution[agent].Count == minSolution;
+
+                    // Set finished agents
+                    if (aboutToFinishAgents[agent] && solution[agent].Count == minSolution)
+                    {
+                        finishedAgents[agent] = true;
+                    }
 
                     var steps = solution[agent].Skip(1).Take(agentMinimumLength);
 

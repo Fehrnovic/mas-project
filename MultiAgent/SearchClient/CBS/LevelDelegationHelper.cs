@@ -96,6 +96,11 @@ namespace MultiAgent.SearchClient.CBS
 
                 usedBoxes.Add(closestBoxHelper.BoxReference);
 
+                if (!closestBoxHelper.ReachableAgents.Any())
+                {
+                    continue;
+                }
+
                 var (closestAgent, costAgent) =
                     closestBoxHelper.ReachableAgents.Aggregate((currentAgent, agent) =>
                         currentAgent.agentDelegationHelper == null || currentAgent.cost > agent.cost
