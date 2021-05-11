@@ -28,7 +28,7 @@ namespace MultiAgent.SearchClient.Search
             var agentBoxGoals = LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[agent];
             var boxPositions = maState.PositionsOfBoxes
                 .Where(kvp => agentBoxes.Contains(kvp.Value)).ToList();
-            var boxGoals = maState.BoxGoals.Where(bg => agentBoxGoals.Contains(bg)).ToList();
+            var boxGoals = maState.BoxGoals.Where(bg => agentBoxGoals.Exists(kvp => kvp.box == bg)).ToList();
 
             Action = action;
             Positions = boxPositions.Select(kvp => kvp.Key).Append(maState.AgentPositions[agent]).ToList();

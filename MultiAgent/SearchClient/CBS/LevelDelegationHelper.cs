@@ -88,24 +88,24 @@ namespace MultiAgent.SearchClient.CBS
                     continue;
                 }
 
-                var closestBoxHelper =
+                var (closestBoxHelper, costBox) =
                     boxGoalHelper.ReachableBoxes.Where(b => !usedBoxes.Contains(b.boxDelegationHelper.BoxReference))
                         .ToList()
                         .Aggregate((currentBox, box) =>
                             currentBox.boxDelegationHelper == null || currentBox.cost > box.cost ? box : currentBox);
 
-                usedBoxes.Add(closestBoxHelper.boxDelegationHelper.BoxReference);
+                usedBoxes.Add(closestBoxHelper.BoxReference);
 
-                var closestAgent =
-                    closestBoxHelper.boxDelegationHelper.ReachableAgents.Aggregate((currentAgent, agent) =>
+                var (closestAgent, costAgent) =
+                    closestBoxHelper.ReachableAgents.Aggregate((currentAgent, agent) =>
                         currentAgent.agentDelegationHelper == null || currentAgent.cost > agent.cost
                             ? agent
                             : currentAgent);
 
-                levelDelegation.AgentToBoxes[closestAgent.agentDelegationHelper.AgentReference]
-                    .Add(closestBoxHelper.boxDelegationHelper.BoxReference);
-                levelDelegation.AgentToBoxGoals[closestAgent.agentDelegationHelper.AgentReference]
-                    .Add(boxGoalHelper.BoxGoalReference);
+                levelDelegation.AgentToBoxes[closestAgent.AgentReference]
+                    .Add(closestBoxHelper.BoxReference);
+                levelDelegation.AgentToBoxGoals[closestAgent.AgentReference]
+                    .Add((boxGoalHelper.BoxGoalReference, costBox + costAgent));
             }
 
             var unusedBoxes = Level.Boxes.Except(usedBoxes).ToList();
@@ -127,7 +127,7 @@ namespace MultiAgent.SearchClient.CBS
     public class LevelDelegation
     {
         public Dictionary<Agent, List<Box>> AgentToBoxes { get; set; }
-        public Dictionary<Agent, List<Box>> AgentToBoxGoals { get; set; }
+        public Dictionary<Agent, List<(Box box, double cost)>> AgentToBoxGoals { get; set; }
 
         public LevelDelegation()
         {
@@ -137,7 +137,7 @@ namespace MultiAgent.SearchClient.CBS
             Level.Agents.ForEach(a =>
             {
                 AgentToBoxes.Add(a, new List<Box>());
-                AgentToBoxGoals.Add(a, new List<Box>());
+                AgentToBoxGoals.Add(a, new List<(Box box, double cost)>());
             });
         }
     }
