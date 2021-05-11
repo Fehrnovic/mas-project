@@ -347,6 +347,9 @@ namespace MultiAgent.SearchClient.Search
                 for (var column = 0; column < Level.Columns; column++)
                 {
                     var box = BoxAt(new Position(row, column));
+                    var boxGoal = BoxGoals.FirstOrDefault(b =>
+                        b.GetInitialLocation().Row == row && b.GetInitialLocation().Column == column);
+
                     if (box != null)
                     {
                         s.Append(box.Letter);
@@ -360,9 +363,18 @@ namespace MultiAgent.SearchClient.Search
                         s.Append(Agent.Number);
                     }
                     else if (AgentGoal != null && AgentGoal.GetInitialLocation().Row == row &&
+                             AgentGoal.GetInitialLocation().Column == column && boxGoal != null)
+                    {
+                        s.Append('%');
+                    }
+                    else if (AgentGoal != null && AgentGoal.GetInitialLocation().Row == row &&
                              AgentGoal.GetInitialLocation().Column == column)
                     {
                         s.Append('$');
+                    }
+                    else if (boxGoal != null)
+                    {
+                        s.Append(char.ToLower(boxGoal.Letter));
                     }
                     else
                     {

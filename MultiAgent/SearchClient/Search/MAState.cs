@@ -598,6 +598,9 @@ namespace MultiAgent.SearchClient.Search
                 {
                     var box = BoxAt(new Position(row, column));
                     var agent = AgentAt(new Position(row, column));
+                    var boxGoal = BoxGoals.FirstOrDefault(b =>
+                        b.GetInitialLocation().Row == row && b.GetInitialLocation().Column == column);
+
                     if (box != null)
                     {
                         s.Append(box.Letter);
@@ -609,6 +612,10 @@ namespace MultiAgent.SearchClient.Search
                     else if (agent != null)
                     {
                         s.Append(agent.Number);
+                    }
+                    else if (boxGoal != null)
+                    {
+                        s.Append(char.ToLower(boxGoal.Letter));
                     }
                     else
                     {

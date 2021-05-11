@@ -357,7 +357,7 @@ namespace MultiAgent
                     var boxGoals = new List<Box>();
                     foreach (var agent in Level.Agents)
                     {
-                        var previousState = delegation[agent];
+                        var previousState = previousSolutionStates[agent];
 
                         agents.Add(agent, previousState.AgentPosition);
                         if (previousState.AgentGoal != null)
