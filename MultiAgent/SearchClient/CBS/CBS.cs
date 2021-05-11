@@ -368,7 +368,7 @@ namespace MultiAgent.SearchClient.CBS
             switch (conflict)
             {
                 case PositionConflict positionConflict:
-                    var corridor = CorridorHelper.CorridorOfPosition(positionConflict.Position);
+                    HashSet<Position> corridor = CorridorHelper.CorridorOfPosition(positionConflict.Position);
                     if (corridor != null)
                     {
                         // Find other agent
@@ -390,12 +390,20 @@ namespace MultiAgent.SearchClient.CBS
 
                         // Find entry time for agent
                         timeCounter = positionConflict.Time;
-                        while (timeCounter > 0
-                               && parentNode.Solution[conflictedAgent][timeCounter].Positions
-                                   .Exists(p => corridor.Contains(p)))
+                        if (timeCounter >= parentNode.Solution[conflictedAgent].Count)
                         {
-                            timeCounter--;
+                            timeCounter = 0;
                         }
+                        else
+                        {
+                            while (timeCounter > 0
+                                   && parentNode.Solution[conflictedAgent][timeCounter].Positions
+                                       .Exists(p => corridor.Contains(p)))
+                            {
+                                timeCounter--;
+                            }
+                        }
+
 
                         // Add constraint saying the agent should not enter while the other agent is still in there
                         var minTime = timeCounter;
