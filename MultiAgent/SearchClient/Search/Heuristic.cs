@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MultiAgent.SearchClient.CBS;
 using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.Search
@@ -12,6 +13,21 @@ namespace MultiAgent.SearchClient.Search
             int agentDistance = 0;
             int boxDistance = 0;
             int solvedGoalsToBoxDistance = 0;
+            int constraintsScore = 0;
+
+            var constraints = state.Constraints.Where(c => c.MaxTime > state.Time).ToList();
+
+            foreach (var constraint in constraints)
+            {
+                foreach (var constrainedPosition in constraint.Positions)
+                {
+                    if (state.PositionsOfBoxes.ContainsKey(constrainedPosition))
+                    {
+                        constraintsScore +=
+                            10 + Level.GetDistanceBetweenPosition(state.AgentPosition, constrainedPosition);
+                    }
+                }
+            }
 
             var boxGoalsPreviouslySolved = state.BoxGoals.Except(new[] {state.CurrentBoxGoal}).ToList();
             if (boxGoalsPreviouslySolved.Any()) // if any box-goals except the one we are currently solving
@@ -77,7 +93,8 @@ namespace MultiAgent.SearchClient.Search
                     Level.GetDistanceBetweenPosition(state.AgentGoal.GetInitialLocation(), state.AgentPosition);
             }
 
-            var h = 20 * solvedGoalsToBoxDistance + 10 * boxDistance + 5 * agentDistance + state.Time;
+            var h = 20 * constraintsScore + 20 * solvedGoalsToBoxDistance + 10 * boxDistance + 5 * agentDistance +
+                    state.Time;
             return h;
         }
 
@@ -87,7 +104,8 @@ namespace MultiAgent.SearchClient.Search
             int agentDistance = 0;
             int boxDistance = 0;
             int solvedGoalsToBoxDistance = 0;
-
+            int constraintsScore = 0;
+            
             foreach (var agent in state.Agents)
             {
                 var boxGoalsPreviouslySolved = state.BoxGoals.Except(new[] {state.AgentToCurrentGoal[agent]}).ToList();
