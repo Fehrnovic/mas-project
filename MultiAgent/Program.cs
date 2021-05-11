@@ -34,7 +34,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MAthomasAppartment.lvl");
+            Level.ParseLevel("MAmultiagentSort.lvl");
 
             Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
 
@@ -55,7 +55,7 @@ namespace MultiAgent
             {
                 var list = new Queue<Box>();
                 foreach (var kvp1 in LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[agent]
-                    .OrderBy(kvp => kvp.cost))
+                    .OrderByDescending(kvp => kvp.cost))
                 {
                     list.Enqueue(kvp1.box);
                 }

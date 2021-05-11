@@ -68,7 +68,7 @@ namespace MultiAgent.SearchClient.Search
                             PrintSearchStatus(exploredStates, frontier);
                         }
 
-                        if (Program.ShouldPrint >= 6)
+                        if (Program.ShouldPrint >= 2)
                         {
                             Console.Error.WriteLine($"{state}");
                         }
