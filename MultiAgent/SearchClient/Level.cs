@@ -284,26 +284,42 @@ namespace MultiAgent.SearchClient
             corridors.RemoveAll(c => c.Count < 2);
             Corridors = corridors;
 
-            Console.Error.WriteLine("Starting initialization of distance map");
-            InitializeDistanceMap();
-            Console.Error.WriteLine("Distance map initialized");
-
-            Console.Error.WriteLine((double) WallCount / ((double) Rows * (double) Columns));
+            if (Program.ShouldPrint >= 2)
+            {
+                Console.Error.WriteLine((double) WallCount / ((double) Rows * (double) Columns));
+            }
             // if ((double) WallCount / ((double) Rows * (double) Columns) < 0.2)
             // {
             //     Console.Error.WriteLine("Does not use bfs");
             //     UseBfs = false;
             // }
 
-            Console.Error.WriteLine("Initialize delegation data");
+            if (Program.ShouldPrint >= 2)
+            {
+                Console.Error.WriteLine("Initialize delegation data");
+            }
+
             LevelDelegationHelper.InitializeDelegationData();
-            Console.Error.WriteLine("Delegation data initialized");
+
+            if (Program.ShouldPrint >= 2)
+            {
+                Console.Error.WriteLine("Delegation data initialized");
+            }
+
+            if (Program.ShouldPrint >= 2)
+            {
+                Console.Error.WriteLine("Starting level delegation");
+            }
 
             LevelDelegationHelper.DelegateLevel();
-            Console.Error.WriteLine("Level delegated");
+
+            if (Program.ShouldPrint >= 2)
+            {
+                Console.Error.WriteLine("Level delegated");
+            }
         }
 
-        public static Dictionary<(Position From, Position To), int> DistanceBetweenPositions = new();
+        private static Dictionary<(Position From, Position To), int> DistanceBetweenPositions = new();
 
         public static int GetDistanceBetweenPosition(Position from, Position to)
         {
@@ -333,68 +349,6 @@ namespace MultiAgent.SearchClient
             DistanceBetweenPositions.Add((to, from), distance);
 
             return distance;
-        }
-
-        public static void InitializeDistanceMap()
-        {
-            DistanceBetweenPositions = new Dictionary<(Position From, Position To), int>();
-
-            // for (int firstPositionRow = 1; firstPositionRow < Walls.GetLength(0); firstPositionRow++)
-            // {
-            //     for (int firstPositionCol = 1; firstPositionCol < Walls.GetLength(1); firstPositionCol++)
-            //     {
-            //         // For each cell in the level that is NOT a wall:
-            //         if (Walls[firstPositionRow, firstPositionCol])
-            //         {
-            //             continue;
-            //         }
-            //
-            //         // Iterate over every other position
-            //         for (int secondPositionRow = 1; secondPositionRow < Walls.GetLength(0); secondPositionRow++)
-            //         {
-            //             for (int secondPositionCol = 1; secondPositionCol < Walls.GetLength(1); secondPositionCol++)
-            //             {
-            //                 // For each cell in the level that is NOT a wall:
-            //                 if (Walls[secondPositionRow, secondPositionCol])
-            //                 {
-            //                     continue;
-            //                 }
-            //
-            //                 var positionFrom = new Position(firstPositionRow, firstPositionCol);
-            //                 var positionTo = new Position(secondPositionRow, secondPositionCol);
-            //
-            //                 if (DistanceBetweenPositions.ContainsKey((positionFrom, positionTo)) ||
-            //                     DistanceBetweenPositions.ContainsKey((positionTo, positionFrom)))
-            //                 {
-            //                     continue;
-            //                 }
-            //
-            //                 // If positions equal - distance between them = 0
-            //                 if (positionFrom.Equals(positionTo))
-            //                 {
-            //                     DistanceBetweenPositions.Add((positionFrom, positionTo), 0);
-            //
-            //                     continue;
-            //                 }
-            //
-            //                 var startNode = Graph.NodeGrid[firstPositionRow, firstPositionCol];
-            //                 var finishNode = Graph.NodeGrid[secondPositionRow, secondPositionCol];
-            //                 if (startNode == null || finishNode == null)
-            //                 {
-            //                     continue;
-            //                 }
-            //
-            //                 var distance = UseBfs
-            //                     ? Graph.BFS(startNode, finishNode)
-            //                     : Math.Abs(firstPositionRow - secondPositionRow) +
-            //                       Math.Abs(firstPositionCol - secondPositionCol);
-            //
-            //                 DistanceBetweenPositions.Add((positionFrom, positionTo), distance);
-            //                 DistanceBetweenPositions.Add((positionTo, positionFrom), distance);
-            //             }
-            //         }
-            //     }
-            // }
         }
     }
 }

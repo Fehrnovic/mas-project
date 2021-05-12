@@ -15,7 +15,7 @@ namespace MultiAgent
     class Program
     {
         public static readonly Stopwatch Timer = new();
-        public static readonly int ShouldPrint = 2;
+        public static readonly int ShouldPrint = 1;
 
         public static string[] Args;
 
@@ -34,9 +34,12 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MAmultiagentSort.lvl");
+            Level.ParseLevel("MAbispebjergHospital.lvl");
 
-            Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+            if (ShouldPrint >= 2)
+            {
+                Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+            }
 
             // Set the GraphSearch to output progress (notice: only quick solutions will crash editor...)
             // GraphSearch.OutputProgress = true;
@@ -232,7 +235,10 @@ namespace MultiAgent
 
                         if (agentToHelp != null)
                         {
-                            Console.Error.WriteLine($"Agent {agent} can help {agentToHelp}");
+                            if (ShouldPrint >= 2)
+                            {
+                                Console.Error.WriteLine($"Agent {agent} is helping {agentToHelp}");
+                            }
 
                             // Take first goal to help
                             var goalToHelpWith = missingBoxGoals[agentToHelp].Dequeue();
@@ -297,6 +303,11 @@ namespace MultiAgent
 
                 // Do CBS - need to return the state for the finished solution for each agent to be used later on
                 var solution = CBS.Run(delegation, finishedAgents);
+                if (solution == null)
+                {
+                    Console.Error.WriteLine("NO SOLUTION FOUND FOR CBS! EXITING...");
+                    Environment.Exit(-1);
+                }
 
                 // Find the minimum solution.
                 var availableAgents = finishedAgents.Any(f => !f.Value)
@@ -308,28 +319,12 @@ namespace MultiAgent
                 if (ShouldPrint >= 1)
                 {
                     Console.Error.WriteLine(
-                        $"Found sub-goal solution with min solution of {minSolution} in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+                        $"Found sub-goal solution with min solution of {Math.Max(minSolution - 1, 0)} in {Timer.ElapsedMilliseconds / 1000.0} seconds");
                 }
 
                 // Retrieve the state of the index of the mininum solution and set as previous solution
                 foreach (var agent in Level.Agents)
                 {
-                    // if (finishedAgents.All(f => f.Value))
-                    // {
-                    //     // All agents are finished. Just take their last actions.
-                    //     foreach (var step in solution[agent].Skip(1).Take(solution[agent].Count - 1))
-                    //     {
-                    //         agentSolutionsSteps[agent].Add(step);
-                    //     }
-                    //
-                    //     continue;
-                    // }
-                    // TODO: Convert all MASteps to SASteps
-
-                    // How to handle finished states? needs to add no-ops.
-                    var agentMinimumLength = Math.Min(minSolution - 1, solution[agent].Count - 1);
-                    previousSolutionStates[agent] = solution[agent][agentMinimumLength].State;
-
                     // Solutions that are not equal to the minimum solution are not finished with their current goal.
                     finishedSubGoal[agent] = solution[agent].Count == minSolution;
 
@@ -339,10 +334,23 @@ namespace MultiAgent
                         finishedAgents[agent] = true;
                     }
 
-                    var steps = solution[agent].Skip(1).Take(agentMinimumLength);
+                    // Calculate the minimum length of this agents solution.
+                    var agentMinimumLength = Math.Min(minSolution - 1, solution[agent].Count - 1);
 
-                    if (agentMinimumLength == 0)
+                    // Update the previous solution states with previous state - Solutions will always have the 0 index as just a state with no action
+                    previousSolutionStates[agent] = solution[agent][agentMinimumLength].State;
+
+                    if (agentMinimumLength == 0 && !agentSolutionsSteps[agent].Any())
                     {
+                        // No last steps. Add no-ops with previous state
+                        for (var i = 0; i < minSolution - 1; i++)
+                        {
+                            agentSolutionsSteps[agent].Add(new SAStep(previousSolutionStates[agent], true));
+                        }
+                    }
+                    else if (agentMinimumLength == 0)
+                    {
+                        // Add the last step as last solution position with no-ops
                         for (var i = 0; i < minSolution - 1; i++)
                         {
                             agentSolutionsSteps[agent].Add(new SAStep(agentSolutionsSteps[agent].Last()));
@@ -351,6 +359,7 @@ namespace MultiAgent
                     else
                     {
                         // For all steps take steps up to minimum solution, add to the agent solution steps
+                        var steps = solution[agent].Skip(1).Take(agentMinimumLength);
                         foreach (var step in steps)
                         {
                             agentSolutionsSteps[agent].Add(step);
@@ -404,16 +413,27 @@ namespace MultiAgent
                 {
                     // If still has steps print those- else print no-op
                     Console.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
-                    Console.Error.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
+
+                    if (ShouldPrint >= 2)
+                    {
+                        Console.Error.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
+                    }
+
                     if (counter++ != agentSolutionsSteps.Count - 1)
                     {
                         Console.Write("|");
-                        Console.Error.Write("|");
+                        if (ShouldPrint >= 2)
+                        {
+                            Console.Error.Write("|");
+                        }
                     }
                 }
 
                 Console.WriteLine();
-                Console.Error.WriteLine();
+                if (ShouldPrint >= 2)
+                {
+                    Console.Error.WriteLine();
+                }
             }
         }
 

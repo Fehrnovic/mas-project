@@ -49,10 +49,10 @@ namespace MultiAgent.SearchClient.Search
             State = previousStep.State;
         }
 
-        public SAStep(SAState state)
+        public SAStep(SAState state, bool useNoOp = false)
         {
             State = state;
-            Action = state.Action;
+            Action = useNoOp ? Action.NoOp : state.Action;
             Positions = state.GetStatePositions();
         }
 
