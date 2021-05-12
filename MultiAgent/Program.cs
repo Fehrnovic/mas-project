@@ -34,7 +34,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MAbispebjergHospital.lvl");
+            Level.ParseLevel("MApacman.lvl");
 
             if (ShouldPrint >= 2)
             {

@@ -10,7 +10,7 @@ namespace MultiAgent.SearchClient.CBS
         public Dictionary<IAgent, List<IStep>> Solution;
         public int Cost => CalculateCost();
         public static int[,] CM = new int[Level.Agents.Count, Level.Agents.Count];
-        public static readonly int B = 150;
+        public static readonly int B = 50;
 
         private int CalculateCost()
         {
@@ -29,8 +29,8 @@ namespace MultiAgent.SearchClient.CBS
 
         public static bool ShouldMerge(IAgent agent1, IAgent agent2)
         {
-            return false;
-            // return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
+            // return true;
+            return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
         }
 
         public void RemoveInternalConstraints(MetaAgent metaAgent)

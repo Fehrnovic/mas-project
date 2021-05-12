@@ -369,7 +369,7 @@ namespace MultiAgent.SearchClient.CBS
             {
                 case PositionConflict positionConflict:
                     HashSet<Position> corridor = CorridorHelper.CorridorOfPosition(positionConflict.Position);
-                    if (corridor != null)
+                    if (corridor != null && false)
                     {
                         // Find other agent
                         var otherAgent = conflict.ConflictedAgents[0] == conflictedAgent
