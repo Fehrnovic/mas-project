@@ -10,6 +10,7 @@ namespace MultiAgent.SearchClient.CBS
     public static class CBS
     {
         public static int Counter = 0;
+        public static bool MergeShouldRestart = false;
 
         public static Dictionary<Agent, List<SAStep>> Run(Dictionary<Agent, SAState> delegation,
             Dictionary<Agent, bool> finishedAgents)
@@ -36,7 +37,7 @@ namespace MultiAgent.SearchClient.CBS
                 root.InvokeLowLevelSearch(agent, delegation[agent]);
             }
 
-            OPEN.Add(root.Cost, new Queue<Node>(new[] {root}));
+            OPEN.Add(root.Cost, new Queue<Node>(new[] { root }));
             exploredNodes.Add(root);
 
             while (OPEN.Any())
@@ -87,81 +88,129 @@ namespace MultiAgent.SearchClient.CBS
                 {
                     var metaAgent = CreateMetaAgent(agent1, agent2, P);
 
-                    // Remove constraints from internal conflicts
-                    P.RemoveInternalConstraints(metaAgent);
-
-                    var state = CreateMAState(metaAgent, delegation, P.Constraints);
-
-                    var foundSolution = P.InvokeLowLevelSearch(metaAgent, state);
-
-                    if (foundSolution)
+                    if (MergeShouldRestart)
                     {
-                        if (P.GetConflict(finishedAgents) == null)
+                        foreach (var agent in P.Solution.Keys)
                         {
-                            return P.ExtractMoves();
+                            IState state;
+                            switch (agent)
+                            {
+                                case Agent a:
+                                    state = CreateSAState(a, delegation[a], new HashSet<IConstraint>());
+                                    P.InvokeLowLevelSearch(a, state);
+                                    break;
+                                case MetaAgent ma:
+                                    state = CreateMAState(ma, delegation, new HashSet<IConstraint>());
+                                    P.InvokeLowLevelSearch(ma, state);
+                                    break;
+                            }
                         }
 
-                        var cost = P.Cost;
+                        var maState = CreateMAState(metaAgent, delegation, new HashSet<IConstraint>());
+                        P.InvokeLowLevelSearch(metaAgent, maState);
+                        OPEN.Clear();
+                        OPEN.Add(0, new Queue<Node>(new[] { P }));
 
-                        if (!OPEN.ContainsKey(cost))
-                        {
-                            OPEN.Add(cost, new Queue<Node>());
-                        }
-
-                        OPEN[cost].Enqueue(P);
-                        exploredNodes.Add(P);
+                        continue;
                     }
                     else
                     {
-                        // Find agents defined in level (except agents already in this meta agent)
-                        // with the same color as the ones in the meta agent
-                        var agentsAbleToMerge = Level.Agents.Except(metaAgent.Agents)
-                            .Where(a => metaAgent.Agents.Exists(ma => ma.Color == a.Color)).ToList();
+                        // Remove constraints from internal conflicts
+                        P.RemoveInternalConstraints(metaAgent);
 
-                        // While there exists agents able to merge and we still can't solve level
-                        while (agentsAbleToMerge.Any())
+                        var state = CreateMAState(metaAgent, delegation, P.Constraints);
+
+                        var foundSolution = P.InvokeLowLevelSearch(metaAgent, state);
+
+                        if (foundSolution)
                         {
-                            var mergeAgent = agentsAbleToMerge.First();
+                            if (P.GetConflict(finishedAgents) == null)
+                            {
+                                return P.ExtractMoves();
+                            }
 
+<<<<<<< Updated upstream
                             P.Solution.Remove(mergeAgent);
                             P.Solution.Remove(metaAgent);
                             metaAgent.Agents.Add(mergeAgent);
+=======
+<<<<<<< Updated upstream
+                            var metaAgentNew = CreateMetaAgent(metaAgent, mergeAgent, P);
+>>>>>>> Stashed changes
 
                             state = CreateMAState(metaAgent, delegation, P.Constraints);
 
                             foundSolution = P.InvokeLowLevelSearch(metaAgent, state);
 
+<<<<<<< Updated upstream
                             if (foundSolution)
+=======
+                            if (P.InvokeLowLevelSearch(metaAgentNew, newState))
+=======
+                            var cost = P.Cost;
+
+                            if (!OPEN.ContainsKey(cost))
+>>>>>>> Stashed changes
                             {
-                                if (P.GetConflict(finishedAgents) == null)
-                                {
-                                    return P.ExtractMoves();
-                                }
-
-                                var cost = P.Cost;
-
-                                if (!OPEN.ContainsKey(cost))
-                                {
-                                    OPEN.Add(cost, new Queue<Node>());
-                                }
-
-                                OPEN[cost].Enqueue(P);
-                                exploredNodes.Add(P);
-
-                                break;
+                                OPEN.Add(cost, new Queue<Node>());
                             }
 
-                            agentsAbleToMerge = Level.Agents.Except(metaAgent.Agents)
-                                .Where(a => metaAgent.Agents.Exists(ma => ma.Color == a.Color)).ToList();
+                            OPEN[cost].Enqueue(P);
+                            exploredNodes.Add(P);
                         }
-                    }
+                        else
+                        {
+                            // Find agents defined in level (except agents already in this meta agent)
+                            // with the same color as the ones in the meta agent
+                            var agentsAbleToMerge = Level.Agents.Except(metaAgent.Agents)
+                                .Where(a => metaAgent.Agents.Exists(ma => ma.Color == a.Color)).ToList();
 
-                    continue;
+                            // While there exists agents able to merge and we still can't solve level
+                            while (agentsAbleToMerge.Any())
+>>>>>>> Stashed changes
+                            {
+                                var mergeAgent = agentsAbleToMerge.First();
+
+                                P.Solution.Remove(mergeAgent);
+                                P.Solution.Remove(metaAgent);
+                                metaAgent.Agents.Add(mergeAgent);
+
+                                state = CreateMAState(metaAgent, delegation, P.Constraints);
+
+                                foundSolution = P.InvokeLowLevelSearch(metaAgent, state);
+
+                                if (foundSolution)
+                                {
+                                    if (P.GetConflict(finishedAgents) == null)
+                                    {
+                                        return P.ExtractMoves();
+                                    }
+
+                                    var cost = P.Cost;
+
+                                    if (!OPEN.ContainsKey(cost))
+                                    {
+                                        OPEN.Add(cost, new Queue<Node>());
+                                    }
+
+                                    OPEN[cost].Enqueue(P);
+                                    exploredNodes.Add(P);
+
+                                    break;
+                                }
+
+                                agentsAbleToMerge = Level.Agents.Except(metaAgent.Agents)
+                                    .Where(a => metaAgent.Agents.Exists(ma => ma.Color == a.Color)).ToList();
+                            }
+                        }
+
+                        continue;
+                    }
                 }
 
                 foreach (var conflictedAgent in conflict.ConflictedAgents)
                 {
-                    var A = new Node {Constraints = new HashSet<IConstraint>(P.Constraints)};
+                    var A = new Node { Constraints = new HashSet<IConstraint>(P.Constraints) };
 
                     var constraint = CreateConstraint(conflictedAgent, conflict, P);
                     if (constraint == null)

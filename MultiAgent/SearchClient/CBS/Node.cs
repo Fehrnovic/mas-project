@@ -10,7 +10,15 @@ namespace MultiAgent.SearchClient.CBS
         public Dictionary<IAgent, List<IStep>> Solution;
         public int Cost => CalculateCost();
         public static int[,] CM = new int[Level.Agents.Count, Level.Agents.Count];
+<<<<<<< Updated upstream
         public static readonly int B = 50;
+=======
+<<<<<<< Updated upstream
+        public static readonly int B = 100;
+=======
+        public static readonly int B = 80;
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
         private int CalculateCost()
         {
@@ -29,7 +37,6 @@ namespace MultiAgent.SearchClient.CBS
 
         public static bool ShouldMerge(IAgent agent1, IAgent agent2)
         {
-            // return true;
             return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
         }
 
@@ -95,6 +102,15 @@ namespace MultiAgent.SearchClient.CBS
 
         public IConflict GetConflict(Dictionary<Agent, bool> finishedAgents)
         {
+            // If agent has solution of length 1, he has no moves, and we must also extend his solution length
+            foreach (var (agent, _) in finishedAgents)
+            {
+                if (Solution.ContainsKey(agent) && Solution[agent].Count == 1)
+                {
+                    finishedAgents[agent] = true;
+                }
+            }
+
             var maxSolutionLength = Solution.Values.Max(a => a.Count);
             var clonedSolution = CloneSolution();
 
