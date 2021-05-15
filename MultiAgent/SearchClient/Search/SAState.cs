@@ -7,7 +7,7 @@ using MultiAgent.SearchClient.CBS;
 
 namespace MultiAgent.SearchClient.Search
 {
-    public class SAState : IState
+    public class SAState
     {
         public Agent Agent;
         public Position AgentPosition;
@@ -159,7 +159,7 @@ namespace MultiAgent.SearchClient.Search
             }
         }
 
-        public IEnumerable<IState> GetExpandedStates()
+        public IEnumerable<SAState> GetExpandedStates()
         {
             // Determine list of applicable actions for the agent
             List<SAState> reachableStates = new(16);
@@ -285,7 +285,7 @@ namespace MultiAgent.SearchClient.Search
             return PositionsOfBoxes.TryGetValue(position, out var box) ? box : null;
         }
 
-        public bool IsGoalState(HashSet<IState> exploredStates)
+        public bool IsGoalState(HashSet<SAState> exploredStates)
         {
             var boxesCompleted = true;
 
@@ -324,7 +324,7 @@ namespace MultiAgent.SearchClient.Search
             return positionToBox.Key;
         }
 
-        public IEnumerable<IStep> ExtractPlan()
+        public IEnumerable<SAStep> ExtractPlan()
         {
             var plan = new SAStep[Time + 1];
             var state = this;
@@ -415,8 +415,8 @@ namespace MultiAgent.SearchClient.Search
             // var constraints2 = state.GetRelevantConstraints();
 
             // var isEqual = AgentPosition == state.AgentPosition
-                          // && constraints.Count == constraints2.Count
-                          // && !constraints.Except(constraints2).Any();
+            // && constraints.Count == constraints2.Count
+            // && !constraints.Except(constraints2).Any();
 
             // return isEqual;
         }
