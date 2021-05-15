@@ -52,6 +52,7 @@ namespace MultiAgent.SearchClient.CBS
                 }
 
                 var P = OPEN.GetMinNode();
+                exploredNodes.Add(P);
 
                 var conflicts = P.GetAllConflicts(finishedAgents);
                 if (conflicts.Count == 0)
@@ -60,6 +61,8 @@ namespace MultiAgent.SearchClient.CBS
                     {
                         Console.Error.WriteLine();
                     }
+                    
+                    Console.Error.WriteLine($"Solved conflicts. Explored {exploredNodes.Count} states");
 
                     return P.ExtractMoves();
                 }
