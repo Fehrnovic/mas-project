@@ -7,6 +7,7 @@ using System.Threading;
 using MultiAgent.SearchClient;
 using MultiAgent.SearchClient.CBS;
 using MultiAgent.SearchClient.Search;
+using MultiAgent.SearchClient.Utils;
 using Action = MultiAgent.SearchClient.Action;
 
 namespace MultiAgent
@@ -14,6 +15,7 @@ namespace MultiAgent
     class Program
     {
         public static readonly Stopwatch Timer = new();
+        public static readonly int ShouldPrint = 1;
 
         public static string[] Args;
 
@@ -32,47 +34,406 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("custom/MA_Simple2.lvl");
+            Level.ParseLevel("competition_levelsSP19/MAdeepurple.lvl");
 
-            Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+            if (ShouldPrint >= 2)
+            {
+                Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+            }
 
             // Set the GraphSearch to output progress (notice: only quick solutions will crash editor...)
             // GraphSearch.OutputProgress = true;
 
             Timer.Restart();
 
-            var solution = CBS.Run();
-
-            Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
-
-            var noOp = new Action("NoOp", ActionType.NoOp, 0, 0, 0, 0);
-
-            var maxIndex = solution.Max(a => a.Count);
-
-            foreach (var actionList in solution)
+            var usedBoxes = new List<Box>(Level.Boxes.Count);
+            var previousSolutionStates = new Dictionary<Agent, SAState>(Level.Agents.Count);
+            var currentBoxGoal = new Dictionary<Agent, Box>(Level.Agents.Count);
+            var currentMostRelevantBox = new Dictionary<Agent, Box>(Level.Agents.Count); // Use to guide agent
+            var finishedAgents = new Dictionary<Agent, bool>(Level.Agents.Count);
+            var aboutToFinishAgents = new Dictionary<Agent, bool>(Level.Agents.Count);
+            var finishedSubGoal = new Dictionary<Agent, bool>(Level.Agents.Count);
+            var missingBoxGoals = new Dictionary<Agent, Queue<Box>>(Level.Agents.Count);
+            var agentSolutionsSteps = new Dictionary<Agent, List<SAStep>>(Level.Agents.Count);
+            foreach (var agent in Level.Agents)
             {
-                if (actionList.Count < maxIndex)
+                var list = new Queue<Box>();
+                foreach (var kvp1 in LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[agent]
+                    .OrderByDescending(kvp => kvp.cost))
                 {
-                    for (var i = actionList.Count; i < maxIndex; i++)
+                    list.Enqueue(kvp1.box);
+                }
+
+                missingBoxGoals.Add(agent, list);
+                currentBoxGoal.Add(agent, null);
+                currentMostRelevantBox.Add(agent, null);
+                finishedAgents.Add(agent, false);
+                aboutToFinishAgents.Add(agent, false);
+                finishedSubGoal.Add(agent, true);
+                agentSolutionsSteps.Add(agent, new List<SAStep>());
+                previousSolutionStates.Add(agent, new SAState(
+                    agent,
+                    null,
+                    LevelDelegationHelper.LevelDelegation.AgentToBoxes[agent],
+                    new List<Box>(),
+                    new HashSet<IConstraint>()
+                ));
+            }
+
+            while (finishedAgents.Any(f => !f.Value)) // while All goals not satisfied
+            {
+                var delegation = new Dictionary<Agent, SAState>(Level.Agents.Count);
+                foreach (var agent in Level.Agents)
+                {
+                    if (!finishedSubGoal[agent] && !finishedAgents[agent])
                     {
-                        actionList.Add(noOp);
+                        // Continue previous goals :)
+                        var agentToBoxState = new SAState(
+                            agent,
+                            previousSolutionStates[agent].AgentPosition,
+                            previousSolutionStates[agent].AgentGoal,
+                            previousSolutionStates[agent].PositionsOfBoxes,
+                            previousSolutionStates[agent].BoxGoals,
+                            new HashSet<IConstraint>()
+                        );
+
+                        agentToBoxState.CurrentBoxGoal = previousSolutionStates[agent].CurrentBoxGoal;
+                        agentToBoxState.RelevantBoxToSolveGoal = previousSolutionStates[agent].RelevantBoxToSolveGoal;
+
+                        delegation.Add(agent, agentToBoxState);
+
+                        continue;
                     }
+
+                    if (currentBoxGoal[agent] != null)
+                    {
+                        // Previous sub-goal was to get to the box to solve a box-goal. Now solve the box goal:
+                        var boxGoals = previousSolutionStates[agent].BoxGoals.ToHashSet();
+                        boxGoals.Add(currentBoxGoal[agent]);
+
+                        var agentToBoxState = new SAState(
+                            agent,
+                            previousSolutionStates[agent].AgentPosition,
+                            null,
+                            previousSolutionStates[agent].PositionsOfBoxes,
+                            boxGoals.ToList(),
+                            new HashSet<IConstraint>()
+                        );
+
+                        if (currentMostRelevantBox[agent] != null)
+                        {
+                            agentToBoxState.RelevantBoxToSolveGoal = currentMostRelevantBox[agent];
+                            agentToBoxState.CurrentBoxGoal = currentBoxGoal[agent];
+                        }
+
+                        // Reset that the agent no longer is finishing a box goal
+                        currentBoxGoal[agent] = null;
+                        currentMostRelevantBox[agent] = null;
+
+                        delegation.Add(agent, agentToBoxState);
+                    }
+                    else if (missingBoxGoals[agent].Any())
+                    {
+                        // Sub-goal: Get to box to solve first box-goal
+                        var boxGoal = missingBoxGoals[agent].Dequeue();
+
+                        Box closestBox = null;
+                        Position? closestBoxPosition = null;
+                        foreach (var (boxPosition, box) in previousSolutionStates[agent].PositionsOfBoxes
+                            .Where(b => !usedBoxes.Contains(b.Value)))
+                        {
+                            if (box.Letter != boxGoal.Letter)
+                            {
+                                continue;
+                            }
+
+                            if (closestBox == null || !closestBoxPosition.HasValue)
+                            {
+                                closestBox = box;
+                                closestBoxPosition = boxPosition;
+                                continue;
+                            }
+
+                            if (Level.GetDistanceBetweenPosition(closestBoxPosition.Value,
+                                    boxGoal.GetInitialLocation()) >
+                                Level.GetDistanceBetweenPosition(boxPosition, boxGoal.GetInitialLocation()))
+                            {
+                                closestBox = box;
+                                closestBoxPosition = boxPosition;
+                            }
+                        }
+
+                        usedBoxes.Add(closestBox);
+
+                        var allBoxPositions = previousSolutionStates.Values.SelectMany(state =>
+                            agent.Number == state.Agent.Number
+                                ? new List<Position>()
+                                : state.PositionsOfBoxes.Keys.ToList()).ToList();
+
+                        var neighborPositions = Level.Graph
+                            .NodeGrid[closestBoxPosition.Value.Row, closestBoxPosition.Value.Column].OutgoingNodes
+                            .Select(n => new Position(n.Row, n.Column)).ToList();
+
+                        var freeNeighborPositions = neighborPositions.Except(allBoxPositions).ToList();
+
+                        neighborPositions = freeNeighborPositions.Any() ? freeNeighborPositions : neighborPositions;
+
+                        Agent agentGoal;
+                        // If neighbor position contains a box goal for this agent-
+                        if (!neighborPositions.Exists(g => !previousSolutionStates[agent]
+                            .BoxGoals.Exists(b =>
+                                b.GetInitialLocation().Row == g.Row &&
+                                b.GetInitialLocation().Column == g.Column)))
+                        {
+                            agentGoal = new Agent(agent.Number, agent.Color,
+                                previousSolutionStates[agent].AgentPosition);
+                        }
+                        else
+                        {
+                            var neighborPositionNode = neighborPositions
+                                .OrderBy(p =>
+                                    Level.GetDistanceBetweenPosition(p, previousSolutionStates[agent].AgentPosition))
+                                .FirstOrDefault(g => !previousSolutionStates[agent]
+                                    .BoxGoals.Exists(b =>
+                                        b.GetInitialLocation().Row == g.Row &&
+                                        b.GetInitialLocation().Column == g.Column));
+
+                            agentGoal = new Agent(agent.Number, agent.Color,
+                                new Position(neighborPositionNode.Row, neighborPositionNode.Column));
+                        }
+
+                        var agentToBoxState = new SAState(
+                            agent,
+                            previousSolutionStates[agent].AgentPosition,
+                            agentGoal,
+                            previousSolutionStates[agent].PositionsOfBoxes,
+                            previousSolutionStates[agent].BoxGoals,
+                            new HashSet<IConstraint>()
+                        );
+
+                        // Set the box goal as the next sub-goal to solve
+                        currentBoxGoal[agent] = boxGoal;
+                        currentMostRelevantBox[agent] = closestBox;
+
+                        delegation.Add(agent, agentToBoxState);
+                    }
+                    else
+                    {
+                        // All box goals has been satisfied
+                        // Is there any agents this agent can help?
+                        Agent agentToHelp = null;
+                        foreach (var otherAgent in Level.Agents.Where(a => a.Color == agent.Color))
+                        {
+                            if (otherAgent == agent)
+                            {
+                                continue;
+                            }
+
+                            if (missingBoxGoals[otherAgent].Count > 1)
+                            {
+                                agentToHelp = otherAgent;
+                                break;
+                            }
+                        }
+
+                        if (agentToHelp != null && false)
+                        {
+                            if (ShouldPrint >= 2)
+                            {
+                                Console.Error.WriteLine($"Agent {agent} is helping {agentToHelp}");
+                            }
+
+                            // Take first goal to help
+                            var goalToHelpWith = missingBoxGoals[agentToHelp].Dequeue();
+
+                            // Find a box that can help solve the goal
+                            var (positionOfBoxToHelpSolve, boxToHelpSolve) = previousSolutionStates[agentToHelp]
+                                .PositionsOfBoxes.First(kv =>
+                                    kv.Value.Letter == goalToHelpWith.Letter && !usedBoxes.Contains(kv.Value));
+
+
+                            // Remove the box from the agent you're helping
+                            previousSolutionStates[agentToHelp].PositionsOfBoxes.Remove(positionOfBoxToHelpSolve);
+
+                            // Add the box to your boxes
+                            previousSolutionStates[agent].PositionsOfBoxes
+                                .Add(positionOfBoxToHelpSolve, boxToHelpSolve);
+
+                            var agentGoal = new Agent(agent.Number, agent.Color,
+                                previousSolutionStates[agent].AgentPosition);
+
+                            var agentToBoxState = new SAState(
+                                agent,
+                                previousSolutionStates[agent].AgentPosition,
+                                agentGoal,
+                                previousSolutionStates[agent].PositionsOfBoxes,
+                                previousSolutionStates[agent].BoxGoals,
+                                new HashSet<IConstraint>()
+                            );
+
+                            // Set the box goal as the next sub-goal to solve
+                            currentBoxGoal[agent] = goalToHelpWith;
+                            currentMostRelevantBox[agent] = boxToHelpSolve;
+
+                            delegation.Add(agent, agentToBoxState);
+                            finishedAgents[agent] = false;
+
+                            continue;
+                        }
+
+                        // . Solve agent goal now.
+                        // OR No remaining gaols. Create a dummy state, with all goals, such that CBS won't destroy goal state.
+                        var state = new SAState(
+                            agent,
+                            previousSolutionStates[agent].AgentPosition,
+                            Level.AgentGoals.FirstOrDefault(ag => ag.Number == agent.Number),
+                            previousSolutionStates[agent].PositionsOfBoxes,
+                            previousSolutionStates[agent].BoxGoals,
+                            new HashSet<IConstraint>()
+                        );
+
+                        aboutToFinishAgents[agent] = true;
+
+                        delegation.Add(agent, state);
+                    }
+                }
+
+                // Do CBS - need to return the state for the finished solution for each agent to be used later on
+                var solution = CBS.Run(delegation, finishedAgents);
+                if (solution == null)
+                {
+                    Console.Error.WriteLine("NO SOLUTION FOUND FOR CBS! EXITING...");
+                    Environment.Exit(-1);
+                }
+
+                // Find the minimum solution.
+                var availableAgents = finishedAgents.Any(f => !f.Value)
+                    ? solution.Where(a => !finishedAgents[a.Key])
+                    : solution;
+
+                var minSolution = availableAgents.Min(a => a.Value.Count);
+
+                if (ShouldPrint >= 1)
+                {
+                    Console.Error.WriteLine(
+                        $"Found sub-goal solution with min solution of {Math.Max(minSolution - 1, 0)} in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+                }
+
+                // Retrieve the state of the index of the mininum solution and set as previous solution
+                foreach (var agent in Level.Agents)
+                {
+                    // Solutions that are not equal to the minimum solution are not finished with their current goal.
+                    finishedSubGoal[agent] = solution[agent].Count == minSolution;
+
+                    // Set finished agents
+                    if (aboutToFinishAgents[agent] && solution[agent].Count == minSolution)
+                    {
+                        finishedAgents[agent] = true;
+                    }
+
+                    // Calculate the minimum length of this agents solution.
+                    var agentMinimumLength = Math.Min(minSolution - 1, solution[agent].Count - 1);
+
+                    // Update the previous solution states with previous state - Solutions will always have the 0 index as just a state with no action
+                    previousSolutionStates[agent] = solution[agent][agentMinimumLength].State;
+
+                    if (agentMinimumLength == 0 && !agentSolutionsSteps[agent].Any())
+                    {
+                        // No last steps. Add no-ops with previous state
+                        for (var i = 0; i < minSolution - 1; i++)
+                        {
+                            agentSolutionsSteps[agent].Add(new SAStep(previousSolutionStates[agent], true));
+                        }
+                    }
+                    else if (agentMinimumLength == 0)
+                    {
+                        // Add the last step as last solution position with no-ops
+                        for (var i = 0; i < minSolution - 1; i++)
+                        {
+                            agentSolutionsSteps[agent].Add(new SAStep(agentSolutionsSteps[agent].Last()));
+                        }
+                    }
+                    else
+                    {
+                        // For all steps take steps up to minimum solution, add to the agent solution steps
+                        var steps = solution[agent].Skip(1).Take(agentMinimumLength);
+                        foreach (var step in steps)
+                        {
+                            agentSolutionsSteps[agent].Add(step);
+                        }
+                    }
+                }
+
+                if (ShouldPrint >= 2)
+                {
+                    var agents = new Dictionary<Agent, Position>();
+                    var agentGoals = new List<Agent>();
+                    var boxes = new Dictionary<Position, Box>();
+                    var boxGoals = new List<Box>();
+                    foreach (var agent in Level.Agents)
+                    {
+                        var previousState = previousSolutionStates[agent];
+
+                        agents.Add(agent, previousState.AgentPosition);
+                        if (previousState.AgentGoal != null)
+                        {
+                            agentGoals.Add(previousState.AgentGoal);
+                        }
+
+                        foreach (var previousStateBoxGoal in previousState.BoxGoals)
+                        {
+                            boxGoals.Add(previousStateBoxGoal);
+                        }
+
+                        foreach (var (position, box) in previousState.PositionsOfBoxes)
+                        {
+                            boxes.Add(position, box);
+                        }
+                    }
+
+                    var dummyState = new MAState(agents, agentGoals, boxes, boxGoals, new HashSet<IConstraint>(),
+                        new Dictionary<Agent, Box>(), new Dictionary<Agent, Box>());
+                    Console.Error.WriteLine(dummyState.ToString());
                 }
             }
 
-            for (var i = 1; i < solution[0].Count; i++)
+            if (ShouldPrint >= 1)
             {
-                for (var j = 0; j < solution.Count; j++)
-                {
-                    Console.Write(solution[j][i].Name);
+                Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+            }
 
-                    if (j != solution.Count - 1)
+            var sortedAgentSolutions = agentSolutionsSteps.OrderBy(a => a.Key.Number).ToList();
+
+            // Find the max length solution and run solution
+            for (var i = 0; i < agentSolutionsSteps.Max(a => a.Value.Count); i++)
+            {
+                var counter = 0;
+                // Foreach agent, get their step of the current i index
+                foreach (var (agent, stepsList) in sortedAgentSolutions)
+                {
+                    // If still has steps print those- else print no-op
+                    Console.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
+
+                    if (ShouldPrint >= 2)
+                    {
+                        Console.Error.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
+                    }
+
+                    if (counter++ != agentSolutionsSteps.Count - 1)
                     {
                         Console.Write("|");
+                        if (ShouldPrint >= 2)
+                        {
+                            Console.Error.Write("|");
+                        }
                     }
                 }
 
                 Console.WriteLine();
+                if (ShouldPrint >= 2)
+                {
+                    Console.Error.WriteLine();
+                }
             }
         }
 

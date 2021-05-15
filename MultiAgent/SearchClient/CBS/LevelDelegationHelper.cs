@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using MultiAgent.SearchClient.Search;
+using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.CBS
 {
@@ -33,11 +36,7 @@ namespace MultiAgent.SearchClient.CBS
                         BoxDelegationHelpers.Add(boxDelegation);
                     }
 
-                    var startNode = Level.Graph.NodeGrid[box.GetInitialLocation().Row, box.GetInitialLocation().Column];
-                    var endNode = Level.Graph.NodeGrid[boxGoal.GetInitialLocation().Row,
-                        boxGoal.GetInitialLocation().Column];
-
-                    int cost = Level.Graph.BFS(startNode, endNode);
+                    int cost = Level.GetDistanceBetweenPosition(box.GetInitialLocation(), boxGoal.GetInitialLocation());
                     if (cost < int.MaxValue)
                     {
                         boxGoalDelegation.ReachableBoxes.Add((boxDelegation, cost));
@@ -56,11 +55,7 @@ namespace MultiAgent.SearchClient.CBS
                             AgentDelegationHelpers.Add(agentDelegation);
                         }
 
-                        startNode = Level.Graph.NodeGrid[box.GetInitialLocation().Row, box.GetInitialLocation().Column];
-                        endNode = Level.Graph.NodeGrid[agent.GetInitialLocation().Row,
-                            agent.GetInitialLocation().Column];
-
-                        cost = Level.Graph.BFS(startNode, endNode);
+                        cost = Level.GetDistanceBetweenPosition(box.GetInitialLocation(), agent.GetInitialLocation());
                         if (cost < int.MaxValue)
                         {
                             if (!agentDelegation.ReachableBoxes.Exists(b => b.boxDelegationHelper.BoxReference == box))
@@ -93,23 +88,30 @@ namespace MultiAgent.SearchClient.CBS
                     continue;
                 }
 
-                var closestBoxHelper =
+                var (closestBoxHelper, costBox) =
                     boxGoalHelper.ReachableBoxes.Where(b => !usedBoxes.Contains(b.boxDelegationHelper.BoxReference))
                         .ToList()
                         .Aggregate((currentBox, box) =>
                             currentBox.boxDelegationHelper == null || currentBox.cost > box.cost ? box : currentBox);
 
-                usedBoxes.Add(closestBoxHelper.boxDelegationHelper.BoxReference);
+                usedBoxes.Add(closestBoxHelper.BoxReference);
 
-                var closestAgent =
-                    closestBoxHelper.boxDelegationHelper.ReachableAgents.Aggregate((currentAgent, agent) =>
+                if (!closestBoxHelper.ReachableAgents.Any())
+                {
+                    continue;
+                }
+
+                var (closestAgent, costAgent) =
+                    closestBoxHelper.ReachableAgents.Aggregate((currentAgent, agent) =>
                         currentAgent.agentDelegationHelper == null || currentAgent.cost > agent.cost
                             ? agent
                             : currentAgent);
 
-                levelDelegation.AgentToBoxes[closestAgent.agentDelegationHelper.AgentReference]
-                    .Add(closestBoxHelper.boxDelegationHelper.BoxReference);
-                levelDelegation.AgentToBoxGoals[closestAgent.agentDelegationHelper.AgentReference]
+                levelDelegation.AgentToBoxes[closestAgent.AgentReference]
+                    .Add(closestBoxHelper.BoxReference);
+                levelDelegation.AgentToBoxGoals[closestAgent.AgentReference]
+                    .Add((boxGoalHelper.BoxGoalReference, costBox + costAgent));
+                levelDelegation.AgentToBoxGoalsNoCost[closestAgent.AgentReference]
                     .Add(boxGoalHelper.BoxGoalReference);
             }
 
@@ -132,17 +134,20 @@ namespace MultiAgent.SearchClient.CBS
     public class LevelDelegation
     {
         public Dictionary<Agent, List<Box>> AgentToBoxes { get; set; }
-        public Dictionary<Agent, List<Box>> AgentToBoxGoals { get; set; }
-        
+        public Dictionary<Agent, List<(Box box, double cost)>> AgentToBoxGoals { get; set; }
+        public Dictionary<Agent, List<Box>> AgentToBoxGoalsNoCost { get; set; }
+
         public LevelDelegation()
         {
             AgentToBoxes = new();
             AgentToBoxGoals = new();
+            AgentToBoxGoalsNoCost = new();
 
             Level.Agents.ForEach(a =>
             {
                 AgentToBoxes.Add(a, new List<Box>());
-                AgentToBoxGoals.Add(a, new List<Box>());
+                AgentToBoxGoals.Add(a, new List<(Box box, double cost)>());
+                AgentToBoxGoalsNoCost.Add(a, new List<Box>());
             });
         }
     }

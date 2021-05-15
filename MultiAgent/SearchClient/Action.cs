@@ -11,6 +11,8 @@ namespace MultiAgent.SearchClient
         public readonly int BoxRowDelta;
         public readonly int BoxColumnDelta;
 
+        public static Action NoOp { get; } = new Action("NoOp", ActionType.NoOp, 0, 0, 0, 0);
+
         public static readonly List<Action> AllActions = new()
         {
             //NoOp

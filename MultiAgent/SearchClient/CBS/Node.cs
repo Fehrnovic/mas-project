@@ -1,53 +1,108 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ConstrainedExecution;
 using MultiAgent.SearchClient.Search;
 
 namespace MultiAgent.SearchClient.CBS
 {
     public class Node
     {
-        public HashSet<Constraint> Constraints = new();
+        public HashSet<IConstraint> Constraints = new();
         public Dictionary<IAgent, List<IStep>> Solution;
         public int Cost => CalculateCost();
         public static int[,] CM = new int[Level.Agents.Count, Level.Agents.Count];
-        public static readonly int B = 80; 
+        public static readonly int B = 150;
 
         private int CalculateCost()
         {
-            return Solution.Values.Max(l => l.Count) + Constraints.Count;
-            // return Solution.Values.Aggregate(0, (current, solution) => current + solution.Count);
-            //var sum = 0;
-            //foreach (var solution in Solution.Values)
-            //{
-            //    sum += solution.Count - 1;
-            //}
+            int bonus = Solution.Keys.Sum(agent => agent is MetaAgent ? agent.Agents.Count : 0);
 
-            //return sum;
+            return Solution.Values.Max(l => l.Count) + Constraints.Count - bonus;
         }
 
         public static bool ShouldMerge(IAgent agent1, IAgent agent2)
         {
+            return false;
             return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
         }
 
-        public IConflict GetConflict()
+        public void RemoveInternalConstraints(MetaAgent metaAgent)
         {
-            // Make sure all solutions are the same length
+            Constraints = Constraints.Where(c => c.Conflict.ConflictedAgents.Except(metaAgent.Agents).Any())
+                .ToHashSet();
+        }
+
+        public bool InvokeLowLevelSearch(IAgent agent, IState state)
+        {
+            var agentSolution = GraphSearch.Search(state, new BestFirstFrontier())?.ToList();
+            if (agentSolution == null)
+            {
+                return false;
+            }
+
+            Solution[agent] = agentSolution;
+
+            return true;
+        }
+
+        public Dictionary<Agent, List<SAStep>> ExtractMoves()
+        {
+            // TODO: Convert all MASteps to SASteps
+            // shouldMerge == false no MASteps are created. But needed for merging
+
+            var agentMoves = new Dictionary<Agent, List<SAStep>>(Level.Agents.Count);
+            foreach (var (agent, steps) in Solution)
+            {
+                switch (agent)
+                {
+                    case Agent a1:
+                        agentMoves.Add(a1, steps.Select(s => (SAStep) s).ToList());
+                        break;
+                    case MetaAgent ma:
+                    {
+                        foreach (var state in steps.Select(step => ((MAStep) step).State))
+                        {
+                            if (state.JointActions == null)
+                            {
+                                foreach (var a2 in ma.Agents)
+                                {
+                                    agentMoves.Add(a2, new List<SAStep> {new(a2, null, state)});
+                                }
+
+                                continue;
+                            }
+
+                            foreach (var (a, action) in state.JointActions)
+                            {
+                                agentMoves[a].Add(new SAStep(a, action, state));
+                            }
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            return agentMoves;
+        }
+
+        public IConflict GetConflict(Dictionary<Agent, bool> finishedAgents)
+        {
             var maxSolutionLength = Solution.Values.Max(a => a.Count);
             var clonedSolution = CloneSolution();
-            foreach (var solution in clonedSolution.Values)
+
+            // For all finished agents, make their solution the same length as the longest.
+            foreach (var (agent, value) in clonedSolution.Where(k => finishedAgents[k.Key.ReferenceAgent]))
             {
-                if (solution.Count >= maxSolutionLength)
+                if (value.Count >= maxSolutionLength)
                 {
                     continue;
                 }
 
-                var lastElement = solution[solution.Count - 1];
-                var maxIterations = maxSolutionLength - solution.Count;
+                var lastElement = value.Last();
+                var maxIterations = maxSolutionLength - value.Count;
                 for (var i = 0; i < maxIterations; i++)
                 {
-                    solution.Add(new SAStep(lastElement.Positions, null));
+                    value.Add(new SAStep(lastElement.Positions, null));
                 }
             }
 
@@ -61,9 +116,13 @@ namespace MultiAgent.SearchClient.CBS
                         var (agent1, agent1Solution) = clonedSolution.ElementAt(agent1Index);
                         var (agent2, agent2Solution) = clonedSolution.ElementAt(agent2Index);
 
+                        // Check that the solutions has the time. Otherwise continue (future events should not count as conflicts)
+                        if (time >= agent1Solution.Count || time >= agent2Solution.Count)
+                        {
+                            break;
+                        }
 
                         // Check for PositionConflict
-
                         var conflictingPositions = agent1Solution[time].Positions
                             .Intersect(agent2Solution[time].Positions)
                             .ToList();

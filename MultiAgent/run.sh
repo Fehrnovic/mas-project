@@ -4,9 +4,9 @@ set -e
 # Set the memory, frontier type, level, speed and timeout
 MEMORY="-Xmx16g"
 FRONTIER="-bfs"
-LEVEL="levels/custom/MA_Simple2.lvl"
-SPEED=500
-TIMEOUT=1800000
+LEVEL="levels/MAmultiagentSort.lvl"
+SPEED=250
+TIMEOUT=180
 
 # Set to 1 to enable debugging
 DEBUG=0

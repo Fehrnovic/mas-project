@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using MultiAgent.SearchClient.Utils;
 
@@ -14,7 +15,7 @@ namespace MultiAgent.SearchClient
     {
         public readonly int Number;
         public readonly Color Color;
-        private readonly Position _initialPosition;
+        private Position _initialPosition;
 
         public Agent(int number, Color color, Position initialPosition)
         {
@@ -28,6 +29,11 @@ namespace MultiAgent.SearchClient
             return _initialPosition;
         }
 
+        public void SetInitialLocation(Position position)
+        {
+            _initialPosition = position;
+        }
+
         // DO NOT OVERWRITE EQUAL / HASHCODE!
         // TWO AGENTS SHOULD ALWAYS REFERENCE THE SAME AGENT
 
@@ -37,7 +43,7 @@ namespace MultiAgent.SearchClient
         }
 
         public Agent ReferenceAgent => this;
-        public List<Agent> Agents => new List<Agent>() {this};
+        public List<Agent> Agents => new() { this };
     }
 
     public class MetaAgent : IAgent
@@ -45,7 +51,7 @@ namespace MultiAgent.SearchClient
         public List<Agent> Agents { get; } = new();
         public Agent ReferenceAgent => Agents[0];
 
-        public override bool Equals(object? obj)
+        public override bool Equals(object obj)
         {
             if (obj is MetaAgent ma)
             {
@@ -53,6 +59,22 @@ namespace MultiAgent.SearchClient
             }
 
             return false;
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = new HashCode();
+            foreach (var agent in Agents)
+            {
+                hashCode.Add(agent);
+            }
+
+            return hashCode.ToHashCode();
+        }
+
+        public override string ToString()
+        {
+            return $"{ReferenceAgent} ({string.Join(", ", Agents)})";
         }
     }
 }

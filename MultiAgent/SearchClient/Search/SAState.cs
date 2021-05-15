@@ -16,6 +16,9 @@ namespace MultiAgent.SearchClient.Search
         public List<Box> Boxes;
         public List<Box> BoxGoals;
 
+        public Box RelevantBoxToSolveGoal;
+        public Box CurrentBoxGoal;
+
         // SAState information
         public readonly Dictionary<Position, Box> PositionsOfBoxes;
 
@@ -23,12 +26,12 @@ namespace MultiAgent.SearchClient.Search
 
         public SAState Parent;
         public int Time;
-        public HashSet<Constraint> Constraints;
+        public HashSet<IConstraint> Constraints;
 
         private int Hash = 0;
 
         public SAState(Agent agent, Agent agentGoal, List<Box> boxes, List<Box> boxGoals,
-            HashSet<Constraint> constraints)
+            HashSet<IConstraint> constraints)
         {
             Agent = agent;
             AgentPosition = agent.GetInitialLocation();
@@ -41,6 +44,26 @@ namespace MultiAgent.SearchClient.Search
             foreach (var box in Boxes)
             {
                 PositionsOfBoxes.Add(box.GetInitialLocation(), box);
+            }
+
+            Constraints = constraints.Where(c => c.Agent == Agent).ToHashSet();
+        }
+
+        public SAState(Agent agent, Position initialAgentPosition, Agent agentGoal, Dictionary<Position, Box> boxes,
+            List<Box> boxGoals,
+            HashSet<IConstraint> constraints)
+        {
+            Agent = agent;
+            AgentPosition = initialAgentPosition;
+            AgentGoal = agentGoal;
+
+            Boxes = boxes.Values.ToList();
+            BoxGoals = boxGoals;
+
+            PositionsOfBoxes = new Dictionary<Position, Box>(Boxes.Count);
+            foreach (var (boxPosition, box) in boxes)
+            {
+                PositionsOfBoxes.Add(boxPosition, box);
             }
 
             Constraints = constraints.Where(c => c.Agent == Agent).ToHashSet();
@@ -59,6 +82,8 @@ namespace MultiAgent.SearchClient.Search
 
             Boxes = parent.Boxes;
             BoxGoals = parent.BoxGoals;
+            CurrentBoxGoal = parent.CurrentBoxGoal;
+            RelevantBoxToSolveGoal = parent.RelevantBoxToSolveGoal;
             PositionsOfBoxes = new Dictionary<Position, Box>(parent.Boxes.Count);
             foreach (var (boxPosition, currentBox) in parent.PositionsOfBoxes)
             {
@@ -157,25 +182,28 @@ namespace MultiAgent.SearchClient.Search
 
         private bool ConstraintsSatisfied()
         {
-            var constraints = GetRelevantConstraints();
-            var constrainedPositions = constraints.Select(c => c.Position).ToList();
+            var constrainedPositions = new List<Position>();
+            foreach (var constraint in GetRelevantConstraints())
+            {
+                constrainedPositions.AddRange(constraint.Positions);
+            }
 
-            var conflictingPositions = GetStatePositions().Intersect(constrainedPositions).ToList();
+            var conflictingPositions = GetStatePositions().Intersect(constrainedPositions);
 
             return !conflictingPositions.Any();
         }
 
         public List<Position> GetStatePositions()
         {
-            var positions = new List<Position> { AgentPosition };
+            var positions = new List<Position> {AgentPosition};
             positions.AddRange(PositionsOfBoxes.Keys);
 
             return positions;
         }
 
-        private List<Constraint> GetRelevantConstraints()
+        private IEnumerable<IConstraint> GetRelevantConstraints()
         {
-            return Constraints.Where(c => c.Time == Time).ToList();
+            return Constraints.Where(c => c.Relevant(Time));
         }
 
         private bool IsApplicable(Action action)
@@ -277,9 +305,9 @@ namespace MultiAgent.SearchClient.Search
             // If agent is placed correctly AND all box goal satisfied
             if ((AgentGoal == null || AgentPosition == AgentGoal.GetInitialLocation()) && boxesCompleted)
             {
-                if (Constraints.Any() && Constraints.Max(c => c.Time) > Time)
+                if (Constraints.Any() && Constraints.Max(c => c.MaxTime) > Time)
                 {
-                    exploredStates.Clear();
+                    // exploredStates.Clear();
                     return false;
                 }
 
@@ -287,6 +315,13 @@ namespace MultiAgent.SearchClient.Search
             }
 
             return false;
+        }
+
+        public Position GetPositionOfBox(Box box)
+        {
+            var positionToBox = PositionsOfBoxes.First(pair => pair.Value == box);
+
+            return positionToBox.Key;
         }
 
         public IEnumerable<IStep> ExtractPlan()
@@ -312,6 +347,9 @@ namespace MultiAgent.SearchClient.Search
                 for (var column = 0; column < Level.Columns; column++)
                 {
                     var box = BoxAt(new Position(row, column));
+                    var boxGoal = BoxGoals.FirstOrDefault(b =>
+                        b.GetInitialLocation().Row == row && b.GetInitialLocation().Column == column);
+
                     if (box != null)
                     {
                         s.Append(box.Letter);
@@ -323,6 +361,20 @@ namespace MultiAgent.SearchClient.Search
                     else if (AgentPosition.Row == row && AgentPosition.Column == column)
                     {
                         s.Append(Agent.Number);
+                    }
+                    else if (AgentGoal != null && AgentGoal.GetInitialLocation().Row == row &&
+                             AgentGoal.GetInitialLocation().Column == column && boxGoal != null)
+                    {
+                        s.Append('%');
+                    }
+                    else if (AgentGoal != null && AgentGoal.GetInitialLocation().Row == row &&
+                             AgentGoal.GetInitialLocation().Column == column)
+                    {
+                        s.Append('$');
+                    }
+                    else if (boxGoal != null)
+                    {
+                        s.Append(char.ToLower(boxGoal.Letter));
                     }
                     else
                     {
@@ -358,15 +410,15 @@ namespace MultiAgent.SearchClient.Search
             }
 
             // TODO: Optimization
-            // return AgentPosition == state.AgentPosition && Time == state.Time;
-            var constraints = GetRelevantConstraints();
-            var constraints2 = state.GetRelevantConstraints();
+            return AgentPosition == state.AgentPosition && Time == state.Time;
+            // var constraints = GetRelevantConstraints();
+            // var constraints2 = state.GetRelevantConstraints();
 
-            var isEqual = AgentPosition == state.AgentPosition
-                          && constraints.Count == constraints2.Count
-                          && !constraints.Except(constraints2).Any();
+            // var isEqual = AgentPosition == state.AgentPosition
+                          // && constraints.Count == constraints2.Count
+                          // && !constraints.Except(constraints2).Any();
 
-            return isEqual;
+            // return isEqual;
         }
 
         public override int GetHashCode()
