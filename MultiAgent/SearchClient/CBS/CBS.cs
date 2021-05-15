@@ -111,7 +111,7 @@ namespace MultiAgent.SearchClient.CBS
                         OPEN[cost].Enqueue(P);
                         exploredNodes.Add(P);
                     }
-                    else
+                    else if (false)
                     {
                         // Find agents defined in level (except agents already in this meta agent)
                         // with the same color as the ones in the meta agent
@@ -123,15 +123,14 @@ namespace MultiAgent.SearchClient.CBS
                         {
                             var mergeAgent = agentsAbleToMerge.First();
 
-                            P.Solution.Remove(mergeAgent);
-                            P.Solution.Remove(metaAgent);
-                            metaAgent.Agents.Add(mergeAgent);
+                            var metaAgentNew = CreateMetaAgent(metaAgent, mergeAgent, P);
 
-                            state = CreateMAState(metaAgent, delegation, P.Constraints);
+                            // Remove constraints from internal conflicts
+                            P.RemoveInternalConstraints(metaAgentNew);
 
-                            foundSolution = P.InvokeLowLevelSearch(metaAgent, state);
+                            var newState = CreateMAState(metaAgentNew, delegation, P.Constraints);
 
-                            if (foundSolution)
+                            if (P.InvokeLowLevelSearch(metaAgentNew, newState))
                             {
                                 if (P.GetConflict(finishedAgents) == null)
                                 {
@@ -205,63 +204,49 @@ namespace MultiAgent.SearchClient.CBS
                         exploredNodes.Add(A);
                     }
                     // Agent did not find a solution
-                    // else
-                    // {
-                    //     // TODO: FIX MERGING FOR SUB-GOALS
-                    //
-                    //     // Find agents defined in level (except agents already in this meta agent)
-                    //     // with the same color as the ones in the meta agent
-                    //     var agentsAbleToMerge = Level.Agents.Except(conflictedAgent.Agents)
-                    //         .Where(a => conflictedAgent.Agents.Exists(ma => ma.Color == a.Color)).ToList();
-                    //
-                    //     // While there exists agents able to merge and we still can't solve level
-                    //     while (agentsAbleToMerge.Any())
-                    //     {
-                    //         var mergeAgent = agentsAbleToMerge.First();
-                    //
-                    //         P.Solution.Remove(mergeAgent);
-                    //         P.Solution.Remove(conflictedAgent);
-                    //
-                    //         var metaAgent = new MetaAgent();
-                    //         metaAgent.Agents.Add(mergeAgent);
-                    //         metaAgent.Agents.AddRange(conflictedAgent.Agents);
-                    //
-                    //         var agents = metaAgent.Agents;
-                    //         var agentGoals = Level.AgentGoals
-                    //             .Where(ag => metaAgent.Agents.Exists(a => a.Number == ag.Number)).ToList();
-                    //         var boxes = metaAgent.Agents
-                    //             .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxes[a]).ToList();
-                    //         var boxGoals = metaAgent.Agents
-                    //             .SelectMany(a => LevelDelegationHelper.LevelDelegation.AgentToBoxGoals[a]).ToList();
-                    //
-                    //         var mergeState = new MAState(agents, agentGoals, boxes, boxGoals, P.Constraints);
-                    //         P.Solution.Add(metaAgent,
-                    //             GraphSearch.Search(mergeState, new BestFirstFrontier())?.ToList());
-                    //
-                    //         if (P.Solution[metaAgent] != null)
-                    //         {
-                    //             if (P.GetConflict(finishedAgents) == null)
-                    //             {
-                    //                 return ExtractMoves(P);
-                    //             }
-                    //
-                    //             var cost = P.Cost;
-                    //
-                    //             if (!OPEN.ContainsKey(cost))
-                    //             {
-                    //                 OPEN.Add(cost, new Queue<Node>());
-                    //             }
-                    //
-                    //             OPEN[cost].Enqueue(P);
-                    //             exploredNodes.Add(P);
-                    //
-                    //             break;
-                    //         }
-                    //
-                    //         agentsAbleToMerge = Level.Agents.Except(metaAgent.Agents)
-                    //             .Where(a => metaAgent.Agents.Exists(ma => ma.Color == a.Color)).ToList();
-                    //     }
-                    // }
+                    else if (false)
+                    {
+                        // Find agents defined in level (except agents already in this meta agent)
+                        // with the same color as the ones in the meta agent
+                        var agentsAbleToMerge = Level.Agents.Except(conflictedAgent.Agents)
+                            .Where(a => conflictedAgent.Agents.Exists(ma => ma.Color == a.Color)).ToList();
+
+                        // While there exists agents able to merge and we still can't solve level
+                        while (agentsAbleToMerge.Any())
+                        {
+                            var mergeAgent = agentsAbleToMerge.First();
+
+                            var metaAgent = CreateMetaAgent(conflictedAgent, mergeAgent, P);
+
+                            // Remove constraints from internal conflicts
+                            P.RemoveInternalConstraints(metaAgent);
+
+                            var newState = CreateMAState(metaAgent, delegation, P.Constraints);
+
+                            if (P.InvokeLowLevelSearch(metaAgent, newState))
+                            {
+                                if (P.GetConflict(finishedAgents) == null)
+                                {
+                                    return P.ExtractMoves();
+                                }
+
+                                var cost = P.Cost;
+
+                                if (!OPEN.ContainsKey(cost))
+                                {
+                                    OPEN.Add(cost, new Queue<Node>());
+                                }
+
+                                OPEN[cost].Enqueue(P);
+                                exploredNodes.Add(P);
+
+                                break;
+                            }
+
+                            agentsAbleToMerge = Level.Agents.Except(metaAgent.Agents)
+                                .Where(a => metaAgent.Agents.Exists(ma => ma.Color == a.Color)).ToList();
+                        }
+                    }
                 }
             }
 
@@ -357,7 +342,10 @@ namespace MultiAgent.SearchClient.CBS
                     break;
             }
 
-            Console.Error.WriteLine($"Merging agent: {agent1} and {agent2} and created metaagent: {metaAgent}");
+            if (Program.ShouldPrint >= 2)
+            {
+                Console.Error.WriteLine($"Merging agent: {agent1} and {agent2} and created metaagent: {metaAgent}");
+            }
 
             return metaAgent;
         }
@@ -369,7 +357,7 @@ namespace MultiAgent.SearchClient.CBS
             {
                 case PositionConflict positionConflict:
                     HashSet<Position> corridor = CorridorHelper.CorridorOfPosition(positionConflict.Position);
-                    if (corridor != null)
+                    if (corridor != null && false)
                     {
                         // Find other agent
                         var otherAgent = conflict.ConflictedAgents[0] == conflictedAgent

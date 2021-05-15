@@ -23,6 +23,8 @@ namespace MultiAgent.SearchClient.Search
         public readonly Dictionary<Agent, Box> AgentToCurrentGoal;
         public readonly Dictionary<Agent, Box> AgentToRelevantBox;
 
+        public Dictionary<Agent, bool> AgentFinishedWithSubGoal;
+
         public Dictionary<Agent, Action> JointActions;
 
         public MAState Parent;
@@ -42,10 +44,12 @@ namespace MultiAgent.SearchClient.Search
 
             AgentPositions = new Dictionary<Agent, Position>(Agents.Count);
             PositionsOfAgents = new Dictionary<Position, Agent>(Agents.Count);
+            AgentFinishedWithSubGoal = new Dictionary<Agent, bool>(Agents.Count);
             foreach (var agent in Agents)
             {
                 AgentPositions.Add(agent, agent.GetInitialLocation());
                 PositionsOfAgents.Add(agent.GetInitialLocation(), agent);
+                AgentFinishedWithSubGoal.Add(agent, false);
             }
 
             PositionsOfBoxes = new Dictionary<Position, Box>(Boxes.Count);
@@ -73,10 +77,12 @@ namespace MultiAgent.SearchClient.Search
 
             AgentPositions = new Dictionary<Agent, Position>(Agents.Count);
             PositionsOfAgents = new Dictionary<Position, Agent>(Agents.Count);
+            AgentFinishedWithSubGoal = new Dictionary<Agent, bool>(Agents.Count);
             foreach (var (agent, agentPosition) in agents)
             {
                 AgentPositions.Add(agent, agentPosition);
                 PositionsOfAgents.Add(agentPosition, agent);
+                AgentFinishedWithSubGoal.Add(agent, false);
             }
 
             PositionsOfBoxes = new Dictionary<Position, Box>(Boxes.Count);
@@ -102,6 +108,7 @@ namespace MultiAgent.SearchClient.Search
             PositionsOfAgents = new Dictionary<Position, Agent>(parent.Agents.Count);
             AgentToCurrentGoal = parent.AgentToCurrentGoal;
             AgentToRelevantBox = parent.AgentToRelevantBox;
+            AgentFinishedWithSubGoal = parent.AgentFinishedWithSubGoal;
             foreach (var (agentPosition, agent) in parent.PositionsOfAgents)
             {
                 AgentPositions.Add(agent, agentPosition);
@@ -431,6 +438,10 @@ namespace MultiAgent.SearchClient.Search
                 switch (action.Type)
                 {
                     case ActionType.NoOp:
+                        agentPosition = PositionOfAgent(agent);
+
+                        destinationRows[agent] = agentPosition.Row;
+                        destinationColumns[agent] = agentPosition.Column;
                         break;
 
                     // Move and pull behave similarly with conflicts, since with a pull, only the agent moves to a square that must be free
@@ -500,7 +511,12 @@ namespace MultiAgent.SearchClient.Search
                     }
 
                     // Agents moving the same box?
-                    if (boxRows[agent1] == boxRows[agent2] && boxColumns[agent1] == boxColumns[agent2])
+                    var isMovingBox = boxRows[agent1] > 0 && boxColumns[agent1] > 0 && boxRows[agent2] > 0 &&
+                                      boxColumns[agent2] > 0;
+                    var isMovingSameBox =
+                        boxRows[agent1] == boxRows[agent2] && boxColumns[agent1] == boxColumns[agent2];
+
+                    if (isMovingBox && isMovingSameBox)
                     {
                         return true;
                     }

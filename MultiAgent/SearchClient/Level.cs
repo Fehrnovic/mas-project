@@ -284,20 +284,79 @@ namespace MultiAgent.SearchClient
             corridors.RemoveAll(c => c.Count < 2);
             Corridors = corridors;
 
+            var modifiedLevel = false;
+            foreach (var box in boxes)
+            {
+                var agentOfSameColor = agents.Where(a => a.Color == box.Color).ToList();
+
+                if (!agentOfSameColor.Exists(a =>
+                    GetDistanceBetweenPosition(box.GetInitialLocation(), a.GetInitialLocation()) < int.MaxValue))
+                {
+                    Walls[box.GetInitialLocation().Row, box.GetInitialLocation().Column] = true;
+                    modifiedLevel = true;
+                }
+            }
+
+            if (modifiedLevel)
+            {
+                Graph = new Graph();
+                corridorsCandidates = new List<GraphNode>();
+                for (var i = 0; i < rowsCount; i++)
+                {
+                    for (var j = 0; j < columnsCount; j++)
+                    {
+                        var graphNode = Graph.NodeGrid[i, j];
+                        if (graphNode == null)
+                        {
+                            continue;
+                        }
+
+                        if (graphNode.OutgoingNodes.Count <= 2)
+                        {
+                            corridorsCandidates.Add(graphNode);
+                        }
+                    }
+                }
+
+                corridors = new List<HashSet<GraphNode>>();
+                foreach (var corridorsCandidate in corridorsCandidates)
+                {
+                    var neighborCorridors =
+                        corridors.Where(c => c.Intersect(corridorsCandidate.OutgoingNodes).Any()).ToList();
+
+                    var newCorridor = new HashSet<GraphNode> {corridorsCandidate};
+                    foreach (var neighborCorridor in neighborCorridors)
+                    {
+                        foreach (var graphNode in neighborCorridor)
+                        {
+                            newCorridor.Add(graphNode);
+                        }
+
+                        corridors.Remove(neighborCorridor);
+                    }
+
+                    corridors.Add(newCorridor);
+                }
+
+                corridors.RemoveAll(c => c.Count < 2);
+                Corridors = corridors;
+            }
+
             if (Program.ShouldPrint >= 2)
             {
                 Console.Error.WriteLine((double) WallCount / ((double) Rows * (double) Columns));
             }
             // if ((double) WallCount / ((double) Rows * (double) Columns) < 0.2)
             // {
-            //     Console.Error.WriteLine("Does not use bfs");
-            //     UseBfs = false;
+                // Console.Error.WriteLine("Does not use bfs");
+                // UseBfs = false;
             // }
 
             if (Program.ShouldPrint >= 2)
             {
                 Console.Error.WriteLine("Initialize delegation data");
             }
+
 
             LevelDelegationHelper.InitializeDelegationData();
 
@@ -342,6 +401,11 @@ namespace MultiAgent.SearchClient
 
             var startNode = Graph.NodeGrid[from.Row, from.Column];
             var finishNode = Graph.NodeGrid[to.Row, to.Column];
+
+            if (startNode == null || finishNode == null)
+            {
+                return int.MaxValue;
+            }
 
             var distance = Graph.BFS(startNode, finishNode);
 

@@ -34,7 +34,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MAbispebjergHospital.lvl");
+            Level.ParseLevel("competition_levelsSP19/MAdeepurple.lvl");
 
             if (ShouldPrint >= 2)
             {
@@ -178,23 +178,26 @@ namespace MultiAgent
 
                         neighborPositions = freeNeighborPositions.Any() ? freeNeighborPositions : neighborPositions;
 
-                        var neighborPositionNode = neighborPositions
-                            .OrderBy(p =>
-                                Level.GetDistanceBetweenPosition(p, previousSolutionStates[agent].AgentPosition))
-                            .FirstOrDefault(g => !previousSolutionStates[agent]
-                                .BoxGoals.Exists(b =>
-                                    b.GetInitialLocation().Row == g.Row &&
-                                    b.GetInitialLocation().Column == g.Column));
-
                         Agent agentGoal;
                         // If neighbor position contains a box goal for this agent-
-                        if (neighborPositionNode == null)
+                        if (!neighborPositions.Exists(g => !previousSolutionStates[agent]
+                            .BoxGoals.Exists(b =>
+                                b.GetInitialLocation().Row == g.Row &&
+                                b.GetInitialLocation().Column == g.Column)))
                         {
                             agentGoal = new Agent(agent.Number, agent.Color,
                                 previousSolutionStates[agent].AgentPosition);
                         }
                         else
                         {
+                            var neighborPositionNode = neighborPositions
+                                .OrderBy(p =>
+                                    Level.GetDistanceBetweenPosition(p, previousSolutionStates[agent].AgentPosition))
+                                .FirstOrDefault(g => !previousSolutionStates[agent]
+                                    .BoxGoals.Exists(b =>
+                                        b.GetInitialLocation().Row == g.Row &&
+                                        b.GetInitialLocation().Column == g.Column));
+
                             agentGoal = new Agent(agent.Number, agent.Color,
                                 new Position(neighborPositionNode.Row, neighborPositionNode.Column));
                         }
@@ -233,7 +236,7 @@ namespace MultiAgent
                             }
                         }
 
-                        if (agentToHelp != null)
+                        if (agentToHelp != null && false)
                         {
                             if (ShouldPrint >= 2)
                             {
@@ -294,12 +297,6 @@ namespace MultiAgent
                         delegation.Add(agent, state);
                     }
                 }
-
-                // foreach (var (agent, state) in delegation)
-                // {
-                //     Console.Error.WriteLine($"Agent: {agent} state:");
-                //     Console.Error.WriteLine(state.ToString());
-                // }
 
                 // Do CBS - need to return the state for the finished solution for each agent to be used later on
                 var solution = CBS.Run(delegation, finishedAgents);
@@ -400,7 +397,10 @@ namespace MultiAgent
                 }
             }
 
-            Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+            if (ShouldPrint >= 1)
+            {
+                Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
+            }
 
             var sortedAgentSolutions = agentSolutionsSteps.OrderBy(a => a.Key.Number).ToList();
 

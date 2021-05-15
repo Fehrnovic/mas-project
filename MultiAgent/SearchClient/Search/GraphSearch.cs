@@ -50,7 +50,10 @@ namespace MultiAgent.SearchClient.Search
                 {
                     if (Program.ShouldPrint >= 5)
                     {
-                        Console.Error.WriteLine($"NO SOLUTION FOR {((SAState) initialState).Agent.Number}");
+                        if (initialState is SAState initialSaState)
+                        {
+                            Console.Error.WriteLine($"NO SOLUTION FOR {(initialSaState).Agent.Number}");
+                        }
                     }
 
                     return null;
