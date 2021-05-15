@@ -53,8 +53,8 @@ namespace MultiAgent.SearchClient.CBS
 
                 var P = OPEN.GetMinNode();
 
-                var conflict = P.GetConflict(finishedAgents);
-                if (conflict == null)
+                var conflicts = P.GetAllConflicts(finishedAgents);
+                if (conflicts.Count == 0)
                 {
                     if (Program.ShouldPrint >= 5)
                     {
@@ -70,38 +70,77 @@ namespace MultiAgent.SearchClient.CBS
                     Console.Error.Write('.');
                 }
 
-                foreach (var conflictedAgent in conflict.ConflictedAgents)
+                var cardinalNodes = new List<Node>();
+                var semiCardinalNodes = new List<List<Node>>();
+                var nonCardinalNodes = new List<List<Node>>();
+
+                foreach (var conflict in conflicts)
                 {
-                    var A = new Node {Constraints = new HashSet<IConstraint>(P.Constraints)};
+                    var costs = new List<int>();
+                    var nodes = new List<Node>();
 
-                    var constraint = CreateConstraint(conflictedAgent, conflict, P);
-                    if (constraint == null)
+                    foreach (var conflictedAgent in conflict.ConflictedAgents)
                     {
-                        continue;
+                        var A = new Node {Constraints = new HashSet<IConstraint>(P.Constraints)};
+
+                        var constraint = CreateConstraint(conflictedAgent, conflict, P);
+                        if (constraint == null)
+                        {
+                            continue;
+                        }
+
+                        if (Program.ShouldPrint >= 5)
+                        {
+                            Console.Error.Write(constraint is CorridorConstraint ? 'C' : 'P');
+                        }
+
+                        A.Constraints.Add(constraint);
+                        A.Solution = P.CloneSolution();
+
+                        var state = CreateSAState(conflictedAgent, delegation[conflictedAgent], A.Constraints);
+                        var foundSolution = A.InvokeLowLevelSearch(conflictedAgent, state);
+
+                        // Agent found a solution
+                        if (foundSolution)
+                        {
+                            costs.Add(A.Cost);
+                            nodes.Add(A);
+                        }
                     }
 
-                    if (Program.ShouldPrint >= 5)
+                    var parentCost = P.Cost;
+                    // Check if cardinal
+                    if (costs.Count(i => i > parentCost) == 2)
                     {
-                        Console.Error.Write(constraint is CorridorConstraint ? 'C' : 'P');
+                        // Cardinal
+                        cardinalNodes = nodes;
+                        break;
+
                     }
 
-                    A.Constraints.Add(constraint);
-                    A.Solution = P.CloneSolution();
-
-                    SAState state;
-
-                    state = CreateSAState(conflictedAgent,
-                        delegation[conflictedAgent], A.Constraints);
-
-
-                    var foundSolution = A.InvokeLowLevelSearch(conflictedAgent, state);
-
-                    // Agent found a solution
-                    if (foundSolution)
+                    if (costs.Count(i => i > parentCost) == 1)
                     {
-                        OPEN.AddNode(A);
-                        exploredNodes.Add(A);
+                        // Semi-cardinal
+                        semiCardinalNodes.Add(nodes);
                     }
+                    else
+                    {
+                        // Non-cardinal
+                        nonCardinalNodes.Add(nodes);
+                    }
+                }
+
+                if (cardinalNodes.Any())
+                {
+                    cardinalNodes.ForEach(n => OPEN.AddNode(n));
+                }
+                else if (semiCardinalNodes.Any())
+                {
+                    semiCardinalNodes.First().ForEach(n => OPEN.AddNode(n));
+                }
+                else
+                {
+                    nonCardinalNodes.FirstOrDefault()?.ForEach(n => OPEN.AddNode(n));
                 }
             }
 

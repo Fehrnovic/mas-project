@@ -42,8 +42,10 @@ namespace MultiAgent.SearchClient.CBS
             return agentMoves;
         }
 
-        public IConflict GetConflict(Dictionary<Agent, bool> finishedAgents)
+        public List<IConflict> GetAllConflicts(Dictionary<Agent, bool> finishedAgents)
         {
+            var conflicts = new List<IConflict>();
+
             var maxSolutionLength = Solution.Values.Max(a => a.Count);
             var clonedSolution = CloneSolution();
 
@@ -86,13 +88,13 @@ namespace MultiAgent.SearchClient.CBS
 
                         if (conflictingPositions.Any())
                         {
-                            return new PositionConflict
+                            conflicts.Add(new PositionConflict
                             {
                                 Agent1 = agent1,
                                 Agent2 = agent2,
                                 Position = conflictingPositions.First(),
                                 Time = time,
-                            };
+                            });
                         }
 
                         // Check if Agent 1 follows Agent 2
@@ -101,13 +103,13 @@ namespace MultiAgent.SearchClient.CBS
                             .ToList();
                         if (conflictingPositions.Any())
                         {
-                            return new FollowConflict
+                            conflicts.Add(new FollowConflict
                             {
                                 Leader = agent2,
                                 Follower = agent1,
                                 FollowerPosition = conflictingPositions.First(),
                                 FollowerTime = time,
-                            };
+                            });
                         }
 
                         // Check if Agent 2 follows Agent 1
@@ -116,19 +118,19 @@ namespace MultiAgent.SearchClient.CBS
                             .ToList();
                         if (conflictingPositions.Any())
                         {
-                            return new FollowConflict
+                            conflicts.Add(new FollowConflict
                             {
                                 Leader = agent1,
                                 Follower = agent2,
                                 FollowerPosition = conflictingPositions.First(),
                                 FollowerTime = time,
-                            };
+                            });
                         }
                     }
                 }
             }
 
-            return null;
+            return conflicts;
         }
 
         public Dictionary<Agent, List<SAStep>> CloneSolution()
