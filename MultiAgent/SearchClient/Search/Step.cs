@@ -8,6 +8,7 @@ namespace MultiAgent.SearchClient.Search
     public interface IStep
     {
         public List<Position> Positions { get; set; }
+        public int ActionCount { get; }
     }
 
     public class SAStep : IStep
@@ -15,6 +16,7 @@ namespace MultiAgent.SearchClient.Search
         public List<Position> Positions { get; set; }
         public Action Action { get; set; }
         public SAState State { get; set; }
+        public int ActionCount => Action != null ? 1 : 0;
 
         public SAStep(List<Position> positions, Action action)
         {
@@ -67,6 +69,7 @@ namespace MultiAgent.SearchClient.Search
         public List<Position> Positions { get; set; }
         public Dictionary<Agent, Action> JointActions { get; set; }
         public MAState State;
+        public int ActionCount => JointActions?.Keys.Count() ?? 0;
 
         public MAStep(MAState state)
         {

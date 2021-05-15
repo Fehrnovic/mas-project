@@ -14,9 +14,7 @@ namespace MultiAgent.SearchClient.CBS
 
         private int CalculateCost()
         {
-            int bonus = Solution.Keys.Sum(agent => agent is MetaAgent ? agent.Agents.Count : 0);
-
-            return Solution.Values.Max(l => l.Count) + Constraints.Count - bonus;
+            return Solution.Values.Sum(l => l.Sum(s => s.ActionCount));
         }
 
         public static bool ShouldMerge(IAgent agent1, IAgent agent2)
