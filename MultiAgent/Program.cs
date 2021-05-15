@@ -15,7 +15,7 @@ namespace MultiAgent
     class Program
     {
         public static readonly Stopwatch Timer = new();
-        public static readonly int ShouldPrint = 1;
+        public static readonly int ShouldPrint = 2;
 
         public static string[] Args;
 
@@ -34,7 +34,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("competition_levelsSP19/MAdeepurple.lvl");
+            Level.ParseLevel("MAmultiagentSort.lvl");
 
             if (ShouldPrint >= 2)
             {
@@ -356,10 +356,16 @@ namespace MultiAgent
                     else
                     {
                         // For all steps take steps up to minimum solution, add to the agent solution steps
-                        var steps = solution[agent].Skip(1).Take(agentMinimumLength);
+                        var steps = solution[agent].Skip(1).Take(agentMinimumLength).ToList();
                         foreach (var step in steps)
                         {
                             agentSolutionsSteps[agent].Add(step);
+                        }
+
+                        // Add no-ops for rest of min solution length
+                        for (var i = 0; i < minSolution - 1 - steps.Count; i++)
+                        {
+                            agentSolutionsSteps[agent].Add(new SAStep(previousSolutionStates[agent], true));
                         }
                     }
                 }
@@ -407,6 +413,11 @@ namespace MultiAgent
             // Find the max length solution and run solution
             for (var i = 0; i < agentSolutionsSteps.Max(a => a.Value.Count); i++)
             {
+                if (ShouldPrint >= 2)
+                {
+                    Console.Error.Write($"{i + 1}: ");
+                }
+
                 var counter = 0;
                 // Foreach agent, get their step of the current i index
                 foreach (var (agent, stepsList) in sortedAgentSolutions)
@@ -432,7 +443,10 @@ namespace MultiAgent
                 Console.WriteLine();
                 if (ShouldPrint >= 2)
                 {
-                    Console.Error.WriteLine();
+                    var outcome = Console.ReadLine();
+                    var hasFalse = outcome.Split('|').Any(o => o == "false");
+
+                    Console.Error.WriteLine(" (" + outcome + ")" + (hasFalse ? " <-------- FALSE!!!" : ""));
                 }
             }
         }
