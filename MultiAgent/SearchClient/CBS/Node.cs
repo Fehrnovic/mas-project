@@ -9,8 +9,6 @@ namespace MultiAgent.SearchClient.CBS
         public HashSet<IConstraint> Constraints = new();
         public Dictionary<Agent, List<SAStep>> Solution;
         public int Cost => CalculateCost();
-        public static int[,] CM = new int[Level.Agents.Count, Level.Agents.Count];
-        public static readonly int B = 150;
 
         private int CalculateCost()
         {

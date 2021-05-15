@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using MultiAgent.searchClient.CBS;
 using MultiAgent.SearchClient.Search;
 using MultiAgent.SearchClient.Utils;
 
@@ -17,7 +18,7 @@ namespace MultiAgent.SearchClient.CBS
             var timer = new Stopwatch();
             timer.Start();
 
-            var OPEN = new Dictionary<int, Queue<Node>>();
+            var OPEN = new Open();
             var exploredNodes = new HashSet<Node>();
 
             var root = new Node
@@ -36,28 +37,21 @@ namespace MultiAgent.SearchClient.CBS
                 root.InvokeLowLevelSearch(agent, delegation[agent]);
             }
 
-            OPEN.Add(root.Cost, new Queue<Node>(new[] {root}));
+            OPEN.AddNode(root);
             exploredNodes.Add(root);
 
-            while (OPEN.Any())
+            while (!OPEN.IsEmpty)
             {
                 if (++Counter % 100 == 0)
                 {
                     if (Program.ShouldPrint >= 3)
                     {
                         Console.Error.WriteLine(
-                            $"OPEN has size : {OPEN.Values.Count}. Time spent: {timer.ElapsedMilliseconds / 1000.0} s");
+                            $"OPEN has size : {OPEN.Size}. Time spent: {timer.ElapsedMilliseconds / 1000.0} s");
                     }
                 }
 
-                var minCost = OPEN.Keys.Min();
-
-                var P = OPEN[minCost].Dequeue();
-
-                if (!OPEN[minCost].Any())
-                {
-                    OPEN.Remove(minCost);
-                }
+                var P = OPEN.GetMinNode();
 
                 var conflict = P.GetConflict(finishedAgents);
                 if (conflict == null)
@@ -75,13 +69,6 @@ namespace MultiAgent.SearchClient.CBS
                 {
                     Console.Error.Write('.');
                 }
-
-                // Update Conflict Matrix
-                var agent1 = conflict.ConflictedAgents[0];
-                var agent2 = conflict.ConflictedAgents[1];
-
-                Node.CM[agent1.Number, agent2.Number] += 1;
-                Node.CM[agent2.Number, agent1.Number] += 1;
 
                 foreach (var conflictedAgent in conflict.ConflictedAgents)
                 {
@@ -112,14 +99,7 @@ namespace MultiAgent.SearchClient.CBS
                     // Agent found a solution
                     if (foundSolution)
                     {
-                        var cost = A.Cost;
-
-                        if (!OPEN.ContainsKey(cost))
-                        {
-                            OPEN.Add(cost, new Queue<Node>());
-                        }
-
-                        OPEN[cost].Enqueue(A);
+                        OPEN.AddNode(A);
                         exploredNodes.Add(A);
                     }
                 }
