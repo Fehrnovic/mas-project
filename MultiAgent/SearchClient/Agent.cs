@@ -5,13 +5,7 @@ using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient
 {
-    public interface IAgent
-    {
-        Agent ReferenceAgent { get; }
-        List<Agent> Agents { get; }
-    }
-
-    public class Agent : IAgent
+    public class Agent
     {
         public readonly int Number;
         public readonly Color Color;
@@ -40,41 +34,6 @@ namespace MultiAgent.SearchClient
         public override string ToString()
         {
             return $"{Number}";
-        }
-
-        public Agent ReferenceAgent => this;
-        public List<Agent> Agents => new() { this };
-    }
-
-    public class MetaAgent : IAgent
-    {
-        public List<Agent> Agents { get; } = new();
-        public Agent ReferenceAgent => Agents[0];
-
-        public override bool Equals(object obj)
-        {
-            if (obj is MetaAgent ma)
-            {
-                return ma.Agents.Count == Agents.Count && !ma.Agents.Except(Agents).Any();
-            }
-
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            var hashCode = new HashCode();
-            foreach (var agent in Agents)
-            {
-                hashCode.Add(agent);
-            }
-
-            return hashCode.ToHashCode();
-        }
-
-        public override string ToString()
-        {
-            return $"{ReferenceAgent} ({string.Join(", ", Agents)})";
         }
     }
 }

@@ -6,26 +6,26 @@ namespace MultiAgent.SearchClient.Search
 {
     public interface IFrontier
     {
-        void Add(IState state);
-        IState Pop();
+        void Add(SAState state);
+        SAState Pop();
         bool IsEmpty();
         int Size();
-        bool Contains(IState state);
+        bool Contains(SAState state);
         string GetName();
     }
 
     public class BFSFrontier : IFrontier
     {
-        public readonly Queue<IState> Queue = new();
-        public readonly HashSet<IState> Set = new();
+        public readonly Queue<SAState> Queue = new();
+        public readonly HashSet<SAState> Set = new();
 
-        public void Add(IState state)
+        public void Add(SAState state)
         {
             Queue.Enqueue(state);
             Set.Add(state);
         }
 
-        public IState Pop()
+        public SAState Pop()
         {
             var state = Queue.Dequeue();
             Set.Remove(state);
@@ -43,7 +43,7 @@ namespace MultiAgent.SearchClient.Search
             return Queue.Count;
         }
 
-        public bool Contains(IState state)
+        public bool Contains(SAState state)
         {
             return Set.Contains(state);
         }
@@ -57,32 +57,27 @@ namespace MultiAgent.SearchClient.Search
 
     public class BestFirstFrontier : IFrontier
     {
-        public readonly Dictionary<int, Queue<IState>> Map = new();
-        public readonly HashSet<IState> Set = new();
+        public readonly Dictionary<int, Queue<SAState>> Map = new();
+        public readonly HashSet<SAState> Set = new();
 
-        public void Add(IState state)
+        public void Add(SAState state)
         {
-            var score = state switch
-            {
-                SAState s => Heuristic.CalculateHeuristicSA(s),
-                MAState s => Heuristic.CalculateHeuristicMA(s),
-                _ => throw new ArgumentOutOfRangeException()
-            };
+            var score = Heuristic.CalculateHeuristicSA(state);
 
             if (!Map.ContainsKey(score))
             {
-                Map.Add(score, new Queue<IState>());
+                Map.Add(score, new Queue<SAState>());
             }
 
             Map[score].Enqueue(state);
             Set.Add(state);
         }
 
-        public IState Pop()
+        public SAState Pop()
         {
             int minScore = Map.Keys.Min();
 
-            IState state = Map[minScore].Dequeue();
+            SAState state = Map[minScore].Dequeue();
 
             if (!Map[minScore].Any())
             {
@@ -104,7 +99,7 @@ namespace MultiAgent.SearchClient.Search
             return Set.Count;
         }
 
-        public bool Contains(IState state)
+        public bool Contains(SAState state)
         {
             return Set.Contains(state);
         }

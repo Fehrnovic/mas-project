@@ -12,7 +12,7 @@ namespace MultiAgent.SearchClient.Search
 
         public static readonly Stopwatch Timer = new();
 
-        public static IEnumerable<IStep> Search(IState initialState, IFrontier frontier)
+        public static IEnumerable<SAStep> Search(SAState initialState, IFrontier frontier)
         {
             if (initialState is SAState saState)
             {
@@ -42,7 +42,7 @@ namespace MultiAgent.SearchClient.Search
             var iterations = 0;
 
             frontier.Add(initialState);
-            var exploredStates = new HashSet<IState>();
+            var exploredStates = new HashSet<SAState>();
 
             while (true)
             {
@@ -102,7 +102,7 @@ namespace MultiAgent.SearchClient.Search
             }
         }
 
-        private static void PrintSearchStatus(HashSet<IState> exploredStates, IFrontier frontier)
+        private static void PrintSearchStatus(HashSet<SAState> exploredStates, IFrontier frontier)
         {
             var elapsedTime = (Program.Timer.ElapsedMilliseconds) / 1000.0;
             Console.Error.WriteLine(

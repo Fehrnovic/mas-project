@@ -7,7 +7,7 @@ namespace MultiAgent.SearchClient.CBS
     public class Node
     {
         public HashSet<IConstraint> Constraints = new();
-        public Dictionary<IAgent, List<IStep>> Solution;
+        public Dictionary<Agent, List<SAStep>> Solution;
         public int Cost => CalculateCost();
         public static int[,] CM = new int[Level.Agents.Count, Level.Agents.Count];
         public static readonly int B = 150;
@@ -17,19 +17,7 @@ namespace MultiAgent.SearchClient.CBS
             return Solution.Values.Sum(l => l.Sum(s => s.ActionCount));
         }
 
-        public static bool ShouldMerge(IAgent agent1, IAgent agent2)
-        {
-            return false;
-            return CM[agent1.ReferenceAgent.Number, agent2.ReferenceAgent.Number] > B;
-        }
-
-        public void RemoveInternalConstraints(MetaAgent metaAgent)
-        {
-            Constraints = Constraints.Where(c => c.Conflict.ConflictedAgents.Except(metaAgent.Agents).Any())
-                .ToHashSet();
-        }
-
-        public bool InvokeLowLevelSearch(IAgent agent, IState state)
+        public bool InvokeLowLevelSearch(Agent agent, SAState state)
         {
             var agentSolution = GraphSearch.Search(state, new BestFirstFrontier())?.ToList();
             if (agentSolution == null)
@@ -50,34 +38,7 @@ namespace MultiAgent.SearchClient.CBS
             var agentMoves = new Dictionary<Agent, List<SAStep>>(Level.Agents.Count);
             foreach (var (agent, steps) in Solution)
             {
-                switch (agent)
-                {
-                    case Agent a1:
-                        agentMoves.Add(a1, steps.Select(s => (SAStep) s).ToList());
-                        break;
-                    case MetaAgent ma:
-                    {
-                        foreach (var state in steps.Select(step => ((MAStep) step).State))
-                        {
-                            if (state.JointActions == null)
-                            {
-                                foreach (var a2 in ma.Agents)
-                                {
-                                    agentMoves.Add(a2, new List<SAStep> {new(a2, null, state)});
-                                }
-
-                                continue;
-                            }
-
-                            foreach (var (a, action) in state.JointActions)
-                            {
-                                agentMoves[a].Add(new SAStep(a, action, state));
-                            }
-                        }
-
-                        break;
-                    }
-                }
+                agentMoves.Add(agent, steps.ToList());
             }
 
             return agentMoves;
@@ -89,7 +50,7 @@ namespace MultiAgent.SearchClient.CBS
             var clonedSolution = CloneSolution();
 
             // For all finished agents, make their solution the same length as the longest.
-            foreach (var (agent, value) in clonedSolution.Where(k => finishedAgents[k.Key.ReferenceAgent]))
+            foreach (var (agent, value) in clonedSolution.Where(k => finishedAgents[k.Key]))
             {
                 if (value.Count >= maxSolutionLength)
                 {
@@ -172,7 +133,7 @@ namespace MultiAgent.SearchClient.CBS
             return null;
         }
 
-        public Dictionary<IAgent, List<IStep>> CloneSolution()
+        public Dictionary<Agent, List<SAStep>> CloneSolution()
         {
             return Solution.ToDictionary(
                 x => x.Key,
