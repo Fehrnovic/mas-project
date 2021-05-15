@@ -15,7 +15,7 @@ namespace MultiAgent
     class Program
     {
         public static readonly Stopwatch Timer = new();
-        public static readonly int ShouldPrint = 2;
+        public static readonly int ShouldPrint = 6;
 
         public static string[] Args;
 

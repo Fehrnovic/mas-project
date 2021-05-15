@@ -127,6 +127,7 @@ namespace MultiAgent.SearchClient.CBS
                     HashSet<Position> corridor = CorridorHelper.CorridorOfPosition(positionConflict.Position);
                     if (corridor != null)
                     {
+                        Console.Error.WriteLine("FOUND CORRIDOR");
                         // Find other agent
                         var otherAgent = conflict.ConflictedAgents[0] == conflictedAgent
                             ? conflict.ConflictedAgents[1]
