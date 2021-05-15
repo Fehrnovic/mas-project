@@ -80,8 +80,21 @@ namespace MultiAgent
                 ));
             }
 
-            while (finishedAgents.Any(f => !f.Value)) // while All goals not satisfied
+            var allAgentsAreNotDone = true;
+            var performFinalSolutionCheck = false;
+            while (allAgentsAreNotDone || performFinalSolutionCheck) // while All goals not satisfied
             {
+                if (performFinalSolutionCheck)
+                {
+                    performFinalSolutionCheck = false;
+                }
+
+                allAgentsAreNotDone = finishedAgents.Any(f => !f.Value);
+                if (!allAgentsAreNotDone)
+                {
+                    performFinalSolutionCheck = true;
+                }
+
                 var delegation = new Dictionary<Agent, SAState>(Level.Agents.Count);
                 foreach (var agent in Level.Agents)
                 {
