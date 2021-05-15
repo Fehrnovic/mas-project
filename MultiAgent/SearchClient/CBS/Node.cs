@@ -12,7 +12,7 @@ namespace MultiAgent.SearchClient.CBS
 
         private int CalculateCost()
         {
-            return Solution.Values.Sum(l => l.Sum(s => s.ActionCount));
+            return Solution.Values.Max(s => s.Count) + Constraints.Count;
         }
 
         public bool InvokeLowLevelSearch(Agent agent, SAState state)
