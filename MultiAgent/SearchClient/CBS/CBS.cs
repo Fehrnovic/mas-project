@@ -82,7 +82,7 @@ namespace MultiAgent.SearchClient.CBS
 
                     if (Program.ShouldPrint >= 5)
                     {
-                        Console.Error.Write('P');
+                        Console.Error.Write(constraint is CorridorConstraint ? 'C' : 'P');
                     }
 
                     A.Constraints.Add(constraint);
@@ -124,13 +124,29 @@ namespace MultiAgent.SearchClient.CBS
             switch (conflict)
             {
                 case PositionConflict positionConflict:
-                    constraint = new Constraint
+                    HashSet<Position> corridor = CorridorHelper.CorridorOfPosition(positionConflict.Position);
+                    if (corridor != null)
                     {
-                        Agent = conflictedAgent,
-                        Position = positionConflict.Position,
-                        Time = positionConflict.Time,
-                        Conflict = conflict
-                    };
+                        var corridorLength = corridor.Count;
+                        var time = positionConflict.Time + corridorLength;
+                        constraint = new CorridorConstraint
+                        {
+                            Agent = conflictedAgent,
+                            CorridorPositions = corridor.ToList(),
+                            Time = (time, time),
+                            Conflict = conflict,
+                        };
+                    }
+                    else
+                    {
+                        constraint = new Constraint
+                        {
+                            Agent = conflictedAgent,
+                            Position = positionConflict.Position,
+                            Time = positionConflict.Time,
+                            Conflict = conflict
+                        };
+                    }
 
                     break;
 
