@@ -241,8 +241,12 @@ namespace MultiAgent.SearchClient
             Rows = rowsCount;
             Columns = columnsCount;
 
-            Console.Error.WriteLine($"Wall percentage is: {(double)WallCount / (Rows * Columns)}");
-            if ((double)WallCount / (Rows * Columns) < 0.1)
+            if (Program.ShouldPrint >= 3)
+            {
+                Console.Error.WriteLine($"Wall percentage is: {(double) WallCount / (Rows * Columns)}");
+            }
+
+            if ((double) WallCount / (Rows * Columns) < 0.1)
             {
                 Console.Error.WriteLine("Does not use bfs");
                 UseBfs = false;
