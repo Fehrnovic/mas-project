@@ -21,7 +21,7 @@ namespace MultiAgent.SearchClient
 
         public static int WallCount = 0;
 
-        public static bool UseBfs = false;
+        public static bool UseBfs = true;
 
         public static int Rows;
         public static int Columns;
@@ -241,6 +241,13 @@ namespace MultiAgent.SearchClient
             Rows = rowsCount;
             Columns = columnsCount;
 
+            Console.Error.WriteLine($"Wall percentage is: {(double)WallCount / (Rows * Columns)}");
+            if ((double)WallCount / (Rows * Columns) < 0.1)
+            {
+                Console.Error.WriteLine("Does not use bfs");
+                UseBfs = false;
+            }
+
             Graph = new Graph();
             for (var i = 0; i < rowsCount; i++)
             {
@@ -253,7 +260,7 @@ namespace MultiAgent.SearchClient
                     }
                 }
             }
-            
+
             var modifiedLevel = false;
             foreach (var box in boxes)
             {
@@ -283,15 +290,6 @@ namespace MultiAgent.SearchClient
                 }
             }
 
-            if (Program.ShouldPrint >= 2)
-            {
-                Console.Error.WriteLine((double) WallCount / ((double) Rows * (double) Columns));
-            }
-            // if ((double) WallCount / ((double) Rows * (double) Columns) < 0.2)
-            // {
-                // Console.Error.WriteLine("Does not use bfs");
-                // UseBfs = false;
-            // }
 
             if (Program.ShouldPrint >= 2)
             {
