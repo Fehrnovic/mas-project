@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using MultiAgent.searchClient.CBS;
 using MultiAgent.SearchClient.Search;
-using MultiAgent.SearchClient.Utils;
 
 namespace MultiAgent.SearchClient.CBS
 {

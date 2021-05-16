@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MultiAgent.SearchClient.CBS;
 
 namespace MultiAgent.searchClient.CBS
@@ -37,5 +35,5 @@ namespace MultiAgent.searchClient.CBS
 
             OpenNodes[cost].Enqueue(n);
         }
-    } 
+    }
 }
