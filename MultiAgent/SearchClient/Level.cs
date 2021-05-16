@@ -18,6 +18,7 @@ namespace MultiAgent.SearchClient
         public static bool[,] Walls;
         public static Graph Graph;
         public static bool[,] OutsideWorld;
+        public static List<HashSet<GraphNode>> Corridors;
 
         public static int WallCount = 0;
 
@@ -262,6 +263,7 @@ namespace MultiAgent.SearchClient
             }
 
             Graph = new Graph();
+            var corridorsCandidates = new List<GraphNode>();
             for (var i = 0; i < rowsCount; i++)
             {
                 for (var j = 0; j < columnsCount; j++)
@@ -271,8 +273,36 @@ namespace MultiAgent.SearchClient
                     {
                         continue;
                     }
+
+                    if (graphNode.OutgoingNodes.Count <= 2)
+                    {
+                        corridorsCandidates.Add(graphNode);
+                    }
                 }
             }
+
+            var corridors = new List<HashSet<GraphNode>>();
+            foreach (var corridorsCandidate in corridorsCandidates)
+            {
+                var neighborCorridors =
+                    corridors.Where(c => c.Intersect(corridorsCandidate.OutgoingNodes).Any()).ToList();
+
+                var newCorridor = new HashSet<GraphNode> {corridorsCandidate};
+                foreach (var neighborCorridor in neighborCorridors)
+                {
+                    foreach (var graphNode in neighborCorridor)
+                    {
+                        newCorridor.Add(graphNode);
+                    }
+
+                    corridors.Remove(neighborCorridor);
+                }
+
+                corridors.Add(newCorridor);
+            }
+
+            corridors.RemoveAll(c => c.Count < 2);
+            Corridors = corridors;
 
             var modifiedLevel = false;
             foreach (var box in boxes)
@@ -290,6 +320,7 @@ namespace MultiAgent.SearchClient
             if (modifiedLevel)
             {
                 Graph = new Graph();
+                corridorsCandidates = new List<GraphNode>();
                 for (var i = 0; i < rowsCount; i++)
                 {
                     for (var j = 0; j < columnsCount; j++)
@@ -299,8 +330,36 @@ namespace MultiAgent.SearchClient
                         {
                             continue;
                         }
+
+                        if (graphNode.OutgoingNodes.Count <= 2)
+                        {
+                            corridorsCandidates.Add(graphNode);
+                        }
                     }
                 }
+
+                corridors = new List<HashSet<GraphNode>>();
+                foreach (var corridorsCandidate in corridorsCandidates)
+                {
+                    var neighborCorridors =
+                        corridors.Where(c => c.Intersect(corridorsCandidate.OutgoingNodes).Any()).ToList();
+
+                    var newCorridor = new HashSet<GraphNode> {corridorsCandidate};
+                    foreach (var neighborCorridor in neighborCorridors)
+                    {
+                        foreach (var graphNode in neighborCorridor)
+                        {
+                            newCorridor.Add(graphNode);
+                        }
+
+                        corridors.Remove(neighborCorridor);
+                    }
+
+                    corridors.Add(newCorridor);
+                }
+
+                corridors.RemoveAll(c => c.Count < 2);
+                Corridors = corridors;
             }
 
 

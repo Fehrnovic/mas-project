@@ -107,10 +107,12 @@ namespace MultiAgent.SearchClient.CBS
                             ? agent
                             : currentAgent);
 
+                HashSet<Position> corridor = CorridorHelper.CorridorOfPosition(boxGoalHelper.BoxGoalReference.GetInitialLocation());
+                int corridorPenalty = corridor != null ? 100 : 0;
                 levelDelegation.AgentToBoxes[closestAgent.AgentReference]
                     .Add(closestBoxHelper.BoxReference);
                 levelDelegation.AgentToBoxGoals[closestAgent.AgentReference]
-                    .Add((boxGoalHelper.BoxGoalReference, costBox + costAgent));
+                    .Add((boxGoalHelper.BoxGoalReference, costBox + costAgent + corridorPenalty));
                 levelDelegation.AgentToBoxGoalsNoCost[closestAgent.AgentReference]
                     .Add(boxGoalHelper.BoxGoalReference);
             }

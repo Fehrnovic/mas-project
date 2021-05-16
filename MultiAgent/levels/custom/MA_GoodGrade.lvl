@@ -1,0 +1,116 @@
+#domain
+hospital
+#levelname
+MA_GoodGrade
+#colors
+blue: A, B
+red: 0
+#initial
+++++++++++++++++++++++++++++++++++++++++++++++++++
++0                                               +
++                                                +
++            BBBBBB          BBBBBB              +
++            BBBBBB          BBBBBB              +
++          BB      BB      BB      BB            +
++          BB      BB      BB      BB            +
++          BB      BB            BB              +
++          BB      BB            BB              +
++          BB      BB          BB                +
++          BB      BB          BB                +
++          BB      BB        BB                  +
++          BB      BB        BB                  +
++          BB      BB      BB                    +
++          BB      BB      BB                    +
++            BBBBBB        BBBBBBBBBB            +
++            BBBBBB        BBBBBBBBBB            +
++                                                +
++                                                +
++                ++++++++++++++                  +
++                ++++++++++++++                  +
++            ++++              ++++              +
++            ++++              ++++              +
++          ++                      ++            +
++          ++                      ++            +
++        ++      AAAA      AAAA      ++          +
++        ++      AAAA      AAAA      ++          +
++        ++    AA    AA  AA    AA    ++          +
++        ++    AA    AA  AA    AA    ++          +
++      ++      AA    AA  AA    AA      ++        +
++      ++      AA    AA  AA    AA      ++        +
++      ++        AAAA      AAAA        ++        +
++      ++        AAAA      AAAA        ++        +
++      ++                              ++        +
++      ++                              ++        +
++      ++                              ++        +
++      ++                              ++        +
++      ++                              ++        +
++      ++                              ++        +
++      ++           AAAAAAAA           ++        +
++      ++           AAAAAAAA           ++        +
++        ++         AAAAAAAA         ++          +
++        ++         AAAAAAAA         ++          +
++        ++         AAAAAAAA         ++          +
++        ++         AAAAAAAA         ++          +
++          ++       AAAAAAAA       ++            +
++          ++       AAAAAAAA       ++            +
++            ++++              ++++              +
++            ++++              ++++              +
++                ++++++++++++++                  +
++                ++++++++++++++                  +
++                                                +
+++++++++++++++++++++++++++++++++++++++++++++++++++
+#goal
+++++++++++++++++++++++++++++++++++++++++++++++++++
++                                                +
++                                                +
++            BBBBBB          BBBBBB              +
++            BBBBBB          BBBBBB              +
++          BB      BB      BB      BB            +
++          BB      BB      BB      BB            +
++          BB      BB            BB              +
++          BB      BB            BB              +
++          BB      BB          BB                +
++          BB      BB          BB                +
++          BB      BB        BB                  +
++          BB      BB        BB                  +
++          BB      BB      BB                    +
++          BB      BB      BB                    +
++            BBBBBB        BBBBBBBBBB            +
++            BBBBBB        BBBBBBBBBB            +
++                                                +
++                                                +
++                ++++++++++++++                  +
++                ++++++++++++++                  +
++            ++++              ++++              +
++            ++++              ++++              +
++          ++                      ++            +
++          ++                      ++            +
++        ++      AAAA      AAAA      ++          +
++        ++      AAAA      AAAA      ++          +
++        ++    AA    AA  AA    AA    ++          +
++        ++    AA    AA  AA    AA    ++          +
++      ++      AA    AA  AA    AA      ++        +
++      ++      AA    AA  AA    AA      ++        +
++      ++        AAAA      AAAA        ++        +
++      ++        AAAA      AAAA        ++        +
++      ++                              ++        +
++      ++                              ++        +
++      ++                              ++        +
++      ++                              ++        +
++      ++                              ++        +
++      ++                              ++        +
++      ++           AAAAAAAA           ++        +
++      ++           AAAAAAAA           ++        +
++        ++         AAAAAAAA         ++          +
++        ++         AAAAAAAA         ++          +
++        ++         AAAAAAAA         ++          +
++        ++         AAAAAAAA         ++          +
++          ++       AAAAAAAA       ++            +
++          ++       AAAAAAAA       ++            +
++            ++++              ++++              +
++            ++++              ++++              +
++                ++++++++++++++                  +
++                ++++++++++++++                  +
++                                               0+
+++++++++++++++++++++++++++++++++++++++++++++++++++
+#end
