@@ -410,9 +410,9 @@ namespace MultiAgent
                 }
 
                 Console.WriteLine();
+                var outcome = Console.ReadLine();
                 if (ShouldPrint >= 2)
                 {
-                    var outcome = Console.ReadLine();
                     var hasFalse = outcome.Split('|').Any(o => o == "false");
 
                     Console.Error.WriteLine(" (" + outcome + ")" + (hasFalse ? " <-------- FALSE!!!" : ""));
