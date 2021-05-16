@@ -82,7 +82,7 @@ namespace MultiAgent.SearchClient.CBS
 
                     if (Program.ShouldPrint >= 5)
                     {
-                        Console.Error.Write(constraint is CorridorConstraint ? 'C' : 'P');
+                        Console.Error.Write('P');
                     }
 
                     A.Constraints.Add(constraint);
@@ -124,64 +124,13 @@ namespace MultiAgent.SearchClient.CBS
             switch (conflict)
             {
                 case PositionConflict positionConflict:
-                    HashSet<Position> corridor = CorridorHelper.CorridorOfPosition(positionConflict.Position);
-                    if (corridor != null && false)
+                    constraint = new Constraint
                     {
-                        // Find other agent
-                        var otherAgent = conflict.ConflictedAgents[0] == conflictedAgent
-                            ? conflict.ConflictedAgents[1]
-                            : conflict.ConflictedAgents[0];
-
-                        // Find time other agent is still in the corridor
-                        var timeCounter = positionConflict.Time;
-                        while (timeCounter < parentNode.Solution[otherAgent].Count
-                               && parentNode.Solution[otherAgent][timeCounter].Positions
-                                   .Exists(p => corridor.Contains(p)))
-                        {
-                            timeCounter++;
-                        }
-
-                        // Add constraints for agent saying it cannot go into corridor while the other agent is still there
-                        var maxTime = timeCounter;
-
-                        // Find entry time for agent
-                        timeCounter = positionConflict.Time;
-                        if (timeCounter >= parentNode.Solution[conflictedAgent].Count)
-                        {
-                            timeCounter = 0;
-                        }
-                        else
-                        {
-                            while (timeCounter > 0
-                                   && parentNode.Solution[conflictedAgent][timeCounter].Positions
-                                       .Exists(p => corridor.Contains(p)))
-                            {
-                                timeCounter--;
-                            }
-                        }
-
-
-                        // Add constraint saying the agent should not enter while the other agent is still in there
-                        var minTime = timeCounter;
-
-                        constraint = new CorridorConstraint
-                        {
-                            Agent = conflictedAgent,
-                            CorridorPositions = corridor.ToList(),
-                            Time = (minTime, maxTime),
-                            Conflict = conflict,
-                        };
-                    }
-                    else
-                    {
-                        constraint = new Constraint
-                        {
-                            Agent = conflictedAgent,
-                            Position = positionConflict.Position,
-                            Time = positionConflict.Time,
-                            Conflict = conflict
-                        };
-                    }
+                        Agent = conflictedAgent,
+                        Position = positionConflict.Position,
+                        Time = positionConflict.Time,
+                        Conflict = conflict
+                    };
 
                     break;
 
