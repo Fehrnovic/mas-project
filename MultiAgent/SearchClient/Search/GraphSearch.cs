@@ -8,30 +8,25 @@ namespace MultiAgent.SearchClient.Search
     {
         public static IEnumerable<SAStep> Search(SAState initialState, IFrontier frontier)
         {
-            if (initialState is SAState saState)
+            if (initialState.Constraints.Any(c =>
             {
-                if (saState.Constraints.Any(c =>
+                if (c is Constraint constraint)
                 {
-                    if (c is Constraint constraint)
+                    var constrainedPosition = constraint.Position;
+                    var agentToPositionTime =
+                        Level.GetDistanceBetweenPosition(initialState.AgentPosition, constrainedPosition);
+
+                    if (agentToPositionTime > constraint.Time + 1)
                     {
-                        var constrainedPosition = constraint.Position;
-                        var agentToPositionTime =
-                            Level.GetDistanceBetweenPosition(saState.AgentPosition, constrainedPosition);
-
-                        if (agentToPositionTime > constraint.Time + 1)
-                        {
-                            return true;
-                        }
+                        return true;
                     }
-
-                    return false;
-                }))
-                {
-                    return null;
                 }
-            }
 
-            var iterations = 0;
+                return false;
+            }))
+            {
+                return null;
+            }
 
             frontier.Add(initialState);
             var exploredStates = new HashSet<SAState>();

@@ -4,7 +4,7 @@ set -e
 # Set the memory, frontier type, level, speed and timeout
 MEMORY="-Xmx16g"
 FRONTIER="-bfs"
-LEVEL="levels/custom/ma_bigopen.lvl"
+LEVEL="levels/mamultiagentsort.lvl"
 SPEED=250
 TIMEOUT=180
 
@@ -16,7 +16,7 @@ dotnet build --nologo --verbosity quiet --configuration Release -consoleLoggerPa
 
 # Run
 if [ $DEBUG == 1 ]; then RUN_FLAG="-- debug console"; else RUN_FLAG="--configuration Release -- no-debug console"; fi
-RUN_STRING="dotnet run ${RUN_FLAG}"
+RUN_STRING="dotnet run ${RUN_FLAG} --nologo --verbosity quiet"
 
 # Echo the command to be run
 echo "Running the following command inside the server: \"${RUN_STRING}\"..."
