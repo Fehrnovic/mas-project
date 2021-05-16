@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MultiAgent.SearchClient.Search;
@@ -44,7 +45,8 @@ namespace MultiAgent.SearchClient.CBS
 
         public IConflict GetConflict(Dictionary<Agent, bool> finishedAgents)
         {
-            var maxSolutionLength = Solution.Values.Max(a => a.Count);
+            var maxSolutionLength = Math.Min(Program.MaxMovesAllowed,
+                Solution.Where(kvp => !finishedAgents[kvp.Key]).Min(kvp => kvp.Value.Count));
             var clonedSolution = CloneSolution();
 
             // For all finished agents, make their solution the same length as the longest.

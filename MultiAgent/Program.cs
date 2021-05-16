@@ -16,6 +16,7 @@ namespace MultiAgent
     {
         public static readonly Stopwatch Timer = new();
         public static readonly int ShouldPrint = 2;
+        public static int MaxMovesAllowed = 2;
 
         public static string[] Args;
 
@@ -78,6 +79,13 @@ namespace MultiAgent
                     new List<Box>(),
                     new HashSet<IConstraint>()
                 ));
+            }
+
+            MAState previousDummyState = null;
+
+            if (Level.Agents.Count == 1)
+            {
+                MaxMovesAllowed = int.MaxValue;
             }
 
             while (finishedAgents.Any(f => !f.Value)) // while All goals not satisfied
@@ -219,68 +227,6 @@ namespace MultiAgent
                     }
                     else
                     {
-                        // All box goals has been satisfied
-                        // Is there any agents this agent can help?
-                        Agent agentToHelp = null;
-                        foreach (var otherAgent in Level.Agents.Where(a => a.Color == agent.Color))
-                        {
-                            if (otherAgent == agent)
-                            {
-                                continue;
-                            }
-
-                            if (missingBoxGoals[otherAgent].Count > 1)
-                            {
-                                agentToHelp = otherAgent;
-                                break;
-                            }
-                        }
-
-                        if (agentToHelp != null && false)
-                        {
-                            if (ShouldPrint >= 2)
-                            {
-                                Console.Error.WriteLine($"Agent {agent} is helping {agentToHelp}");
-                            }
-
-                            // Take first goal to help
-                            var goalToHelpWith = missingBoxGoals[agentToHelp].Dequeue();
-
-                            // Find a box that can help solve the goal
-                            var (positionOfBoxToHelpSolve, boxToHelpSolve) = previousSolutionStates[agentToHelp]
-                                .PositionsOfBoxes.First(kv =>
-                                    kv.Value.Letter == goalToHelpWith.Letter && !usedBoxes.Contains(kv.Value));
-
-
-                            // Remove the box from the agent you're helping
-                            previousSolutionStates[agentToHelp].PositionsOfBoxes.Remove(positionOfBoxToHelpSolve);
-
-                            // Add the box to your boxes
-                            previousSolutionStates[agent].PositionsOfBoxes
-                                .Add(positionOfBoxToHelpSolve, boxToHelpSolve);
-
-                            var agentGoal = new Agent(agent.Number, agent.Color,
-                                previousSolutionStates[agent].AgentPosition);
-
-                            var agentToBoxState = new SAState(
-                                agent,
-                                previousSolutionStates[agent].AgentPosition,
-                                agentGoal,
-                                previousSolutionStates[agent].PositionsOfBoxes,
-                                previousSolutionStates[agent].BoxGoals,
-                                new HashSet<IConstraint>()
-                            );
-
-                            // Set the box goal as the next sub-goal to solve
-                            currentBoxGoal[agent] = goalToHelpWith;
-                            currentMostRelevantBox[agent] = boxToHelpSolve;
-
-                            delegation.Add(agent, agentToBoxState);
-                            finishedAgents[agent] = false;
-
-                            continue;
-                        }
-
                         // . Solve agent goal now.
                         // OR No remaining gaols. Create a dummy state, with all goals, such that CBS won't destroy goal state.
                         var state = new SAState(
@@ -311,7 +257,16 @@ namespace MultiAgent
                     ? solution.Where(a => !finishedAgents[a.Key])
                     : solution;
 
-                var minSolution = availableAgents.Min(a => a.Value.Count);
+                var minSolution = Math.Min(availableAgents.Min(a => a.Value.Count), MaxMovesAllowed);
+
+                // Amount of agents that aren't finished and only performs no ops
+                var count = solution.Where(kvp => !finishedAgents[kvp.Key]).Count(kvp =>
+                    kvp.Value.Skip(1).Take(minSolution - 1).All(s => s.Action.Type == ActionType.NoOp));
+
+                if (count >= 1 && minSolution > 1)
+                {
+                    MaxMovesAllowed += 1;
+                }
 
                 if (ShouldPrint >= 1)
                 {
@@ -370,36 +325,50 @@ namespace MultiAgent
                     }
                 }
 
-                if (ShouldPrint >= 2)
+
+                var agents = new Dictionary<Agent, Position>();
+                var agentGoals = new List<Agent>();
+                var boxes = new Dictionary<Position, Box>();
+                var boxGoalsDummy = new List<Box>();
+                foreach (var agent in Level.Agents)
                 {
-                    var agents = new Dictionary<Agent, Position>();
-                    var agentGoals = new List<Agent>();
-                    var boxes = new Dictionary<Position, Box>();
-                    var boxGoals = new List<Box>();
-                    foreach (var agent in Level.Agents)
+                    var previousState = previousSolutionStates[agent];
+
+                    agents.Add(agent, previousState.AgentPosition);
+                    if (previousState.AgentGoal != null)
                     {
-                        var previousState = previousSolutionStates[agent];
-
-                        agents.Add(agent, previousState.AgentPosition);
-                        if (previousState.AgentGoal != null)
-                        {
-                            agentGoals.Add(previousState.AgentGoal);
-                        }
-
-                        foreach (var previousStateBoxGoal in previousState.BoxGoals)
-                        {
-                            boxGoals.Add(previousStateBoxGoal);
-                        }
-
-                        foreach (var (position, box) in previousState.PositionsOfBoxes)
-                        {
-                            boxes.Add(position, box);
-                        }
+                        agentGoals.Add(previousState.AgentGoal);
                     }
 
-                    var dummyState = new MAState(agents, agentGoals, boxes, boxGoals, new HashSet<IConstraint>(),
-                        new Dictionary<Agent, Box>(), new Dictionary<Agent, Box>());
-                    Console.Error.WriteLine(dummyState.ToString());
+                    foreach (var previousStateBoxGoal in previousState.BoxGoals)
+                    {
+                        boxGoalsDummy.Add(previousStateBoxGoal);
+                    }
+
+                    foreach (var (position, box) in previousState.PositionsOfBoxes)
+                    {
+                        boxes.Add(position, box);
+                    }
+                }
+
+                var currentState = new MAState(agents, agentGoals, boxes, boxGoalsDummy, new HashSet<IConstraint>(),
+                    new Dictionary<Agent, Box>(), new Dictionary<Agent, Box>());
+
+                if (currentState.Equals(previousDummyState) && minSolution > 1)
+                {
+                    foreach (var (agent, steps) in agentSolutionsSteps)
+                    {
+                        steps.RemoveRange(steps.Count - (minSolution - 1), minSolution - 1);
+                    }
+
+                    MaxMovesAllowed += 1;
+                }
+
+                previousDummyState = currentState;
+
+                if (ShouldPrint >= 2)
+                {
+                    Console.Error.WriteLine(currentState.ToString());
                 }
             }
 
