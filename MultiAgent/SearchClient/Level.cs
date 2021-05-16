@@ -248,7 +248,11 @@ namespace MultiAgent.SearchClient
 
             if ((double) WallCount / (Rows * Columns) < 0.1)
             {
-                Console.Error.WriteLine("Does not use bfs");
+                if (Program.ShouldPrint >= 3)
+                {
+                    Console.Error.WriteLine("Does not use bfs");
+                }
+
                 UseBfs = false;
             }
 
