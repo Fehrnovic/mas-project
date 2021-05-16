@@ -22,7 +22,7 @@ namespace MultiAgent.SearchClient
 
         public static int WallCount = 0;
 
-        public static bool UseBfs = true;
+        public static bool UseBfs = false;
 
         public static int Rows;
         public static int Columns;
