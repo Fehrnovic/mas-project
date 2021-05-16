@@ -10,14 +10,9 @@ namespace MultiAgent.SearchClient.CBS
 {
     public static class CBS
     {
-        public static int Counter = 0;
-
         public static Dictionary<Agent, List<SAStep>> Run(Dictionary<Agent, SAState> delegation,
             Dictionary<Agent, bool> finishedAgents)
         {
-            var timer = new Stopwatch();
-            timer.Start();
-
             var OPEN = new Open();
             var exploredNodes = new HashSet<Node>();
 
@@ -29,11 +24,6 @@ namespace MultiAgent.SearchClient.CBS
 
             foreach (var agent in Level.Agents)
             {
-                if (Program.ShouldPrint >= 5)
-                {
-                    Console.Error.Write(agent.Number);
-                }
-
                 root.InvokeLowLevelSearch(agent, delegation[agent]);
             }
 
@@ -42,34 +32,15 @@ namespace MultiAgent.SearchClient.CBS
 
             while (!OPEN.IsEmpty)
             {
-                if (++Counter % 100 == 0)
-                {
-                    if (Program.ShouldPrint >= 3)
-                    {
-                        Console.Error.WriteLine(
-                            $"OPEN has size : {OPEN.Size}. Time spent: {timer.ElapsedMilliseconds / 1000.0} s");
-                    }
-                }
-
                 var P = OPEN.GetMinNode();
 
                 var conflict = P.GetConflict(finishedAgents);
                 if (conflict == null)
                 {
-                    if (Program.ShouldPrint >= 5)
-                    {
-                        Console.Error.WriteLine();
-                    }
-
                     return P.ExtractMoves();
                 }
 
                 // CONFLICT!
-                if (Program.ShouldPrint >= 5)
-                {
-                    Console.Error.Write('.');
-                }
-
                 foreach (var conflictedAgent in conflict.ConflictedAgents)
                 {
                     var A = new Node {Constraints = new HashSet<IConstraint>(P.Constraints)};
@@ -78,11 +49,6 @@ namespace MultiAgent.SearchClient.CBS
                     if (constraint == null)
                     {
                         continue;
-                    }
-
-                    if (Program.ShouldPrint >= 5)
-                    {
-                        Console.Error.Write('P');
                     }
 
                     A.Constraints.Add(constraint);

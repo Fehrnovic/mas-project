@@ -247,18 +247,8 @@ namespace MultiAgent.SearchClient
             Rows = rowsCount;
             Columns = columnsCount;
 
-            if (Program.ShouldPrint >= 3)
-            {
-                Console.Error.WriteLine($"Wall percentage is: {(double) WallCount / (Rows * Columns)}");
-            }
-
             if ((double) WallCount / (Rows * Columns) < 0.1)
             {
-                if (Program.ShouldPrint >= 1)
-                {
-                    Console.Error.WriteLine("Does not use bfs");
-                }
-
                 UseBfs = false;
             }
 
@@ -362,31 +352,8 @@ namespace MultiAgent.SearchClient
                 Corridors = corridors;
             }
 
-
-            if (Program.ShouldPrint >= 2)
-            {
-                Console.Error.WriteLine("Initialize delegation data");
-            }
-
-
             LevelDelegationHelper.InitializeDelegationData();
-
-            if (Program.ShouldPrint >= 2)
-            {
-                Console.Error.WriteLine("Delegation data initialized");
-            }
-
-            if (Program.ShouldPrint >= 2)
-            {
-                Console.Error.WriteLine("Starting level delegation");
-            }
-
             LevelDelegationHelper.DelegateLevel();
-
-            if (Program.ShouldPrint >= 2)
-            {
-                Console.Error.WriteLine("Level delegated");
-            }
         }
 
         private static Dictionary<(Position From, Position To), int> DistanceBetweenPositions = new();

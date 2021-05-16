@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using MultiAgent.SearchClient;
 using MultiAgent.SearchClient.CBS;
 using MultiAgent.SearchClient.Search;
@@ -14,8 +12,6 @@ namespace MultiAgent
 {
     class Program
     {
-        public static readonly Stopwatch Timer = new();
-        public static readonly int ShouldPrint = 0;
         public static int MaxMovesAllowed = 2;
 
         public static string[] Args;
@@ -29,23 +25,11 @@ namespace MultiAgent
             Console.SetIn(new StreamReader(Console.OpenStandardInput()));
             Console.WriteLine("SearchClient");
 
-            // Test if the debug flag is enabled
-            ShouldDebug();
-
-            Timer.Start();
-
             // Initialize the level
             Level.ParseLevel("custom/rip.lvl");
 
-            if (ShouldPrint >= 2)
-            {
-                Console.Error.WriteLine($"Level initialized in {Timer.ElapsedMilliseconds / 1000.0} seconds");
-            }
-
             // Set the GraphSearch to output progress (notice: only quick solutions will crash editor...)
             // GraphSearch.OutputProgress = true;
-
-            Timer.Restart();
 
             var usedBoxes = new List<Box>(Level.Boxes.Count);
             var previousSolutionStates = new Dictionary<Agent, SAState>(Level.Agents.Count);
@@ -248,7 +232,6 @@ namespace MultiAgent
                 var solution = CBS.Run(delegation, finishedAgents);
                 if (solution == null)
                 {
-                    Console.Error.WriteLine("NO SOLUTION FOUND FOR CBS! EXITING...");
                     Environment.Exit(-1);
                 }
 
@@ -266,12 +249,6 @@ namespace MultiAgent
                 if (count >= 1 && minSolution > 1)
                 {
                     MaxMovesAllowed += 1;
-                }
-
-                if (ShouldPrint >= 1)
-                {
-                    Console.Error.WriteLine(
-                        $"Found sub-goal solution with min solution of {Math.Max(minSolution - 1, 0)} in {Timer.ElapsedMilliseconds / 1000.0} seconds");
                 }
 
                 // Retrieve the state of the index of the mininum solution and set as previous solution
@@ -370,16 +347,6 @@ namespace MultiAgent
                 }
 
                 previousDummyState = currentState;
-
-                if (ShouldPrint >= 2)
-                {
-                    Console.Error.WriteLine(currentState.ToString());
-                }
-            }
-
-            if (ShouldPrint >= 1)
-            {
-                Console.Error.WriteLine($"Found solution in {Timer.ElapsedMilliseconds / 1000.0} seconds");
             }
 
             var sortedAgentSolutions = agentSolutionsSteps.OrderBy(a => a.Key.Number).ToList();
@@ -387,11 +354,6 @@ namespace MultiAgent
             // Find the max length solution and run solution
             for (var i = 0; i < agentSolutionsSteps.Max(a => a.Value.Count); i++)
             {
-                if (ShouldPrint >= 2)
-                {
-                    Console.Error.Write($"{i + 1}: ");
-                }
-
                 var counter = 0;
                 // Foreach agent, get their step of the current i index
                 foreach (var (agent, stepsList) in sortedAgentSolutions)
@@ -399,43 +361,14 @@ namespace MultiAgent
                     // If still has steps print those- else print no-op
                     Console.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
 
-                    if (ShouldPrint >= 2)
-                    {
-                        Console.Error.Write(i < stepsList.Count ? stepsList[i].Action.Name : Action.NoOp.Name);
-                    }
-
                     if (counter++ != agentSolutionsSteps.Count - 1)
                     {
                         Console.Write("|");
-                        if (ShouldPrint >= 2)
-                        {
-                            Console.Error.Write("|");
-                        }
                     }
                 }
 
                 Console.WriteLine();
-                var outcome = Console.ReadLine();
-                if (ShouldPrint >= 2)
-                {
-                    var hasFalse = outcome.Split('|').Any(o => o == "false");
-
-                    Console.Error.WriteLine(" (" + outcome + ")" + (hasFalse ? " <-------- FALSE!!!" : ""));
-                }
-            }
-        }
-
-        private static void ShouldDebug()
-        {
-            if (Args.Length <= 0 || Args[0] != "debug")
-            {
-                return;
-            }
-
-            Debugger.Launch();
-            while (!Debugger.IsAttached)
-            {
-                Thread.Sleep(1000);
+                Console.ReadLine();
             }
         }
     }
