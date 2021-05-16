@@ -23,7 +23,7 @@ namespace MultiAgent
 
             // Setup the Console
             Console.SetIn(new StreamReader(Console.OpenStandardInput()));
-            Console.WriteLine("SearchClient");
+            Console.WriteLine("EOF");
 
             // Initialize the level
             Level.ParseLevel("custom/rip.lvl");
