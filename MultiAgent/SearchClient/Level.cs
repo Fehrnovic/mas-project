@@ -63,6 +63,11 @@ namespace MultiAgent.SearchClient
                 var entities = split[1].Split(",");
                 foreach (var entity in entities)
                 {
+                    if (entity.Trim() == "")
+                    {
+                        continue;
+                    }
+
                     var c = entity.Trim()[0];
                     if ('0' <= c && c <= '9')
                     {
@@ -248,7 +253,7 @@ namespace MultiAgent.SearchClient
 
             if ((double) WallCount / (Rows * Columns) < 0.1)
             {
-                if (Program.ShouldPrint >= 3)
+                if (Program.ShouldPrint >= 1)
                 {
                     Console.Error.WriteLine("Does not use bfs");
                 }

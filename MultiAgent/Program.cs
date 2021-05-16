@@ -15,7 +15,7 @@ namespace MultiAgent
     class Program
     {
         public static readonly Stopwatch Timer = new();
-        public static readonly int ShouldPrint = 0;
+        public static readonly int ShouldPrint = 2;
         public static int MaxMovesAllowed = 2;
 
         public static string[] Args;
@@ -35,7 +35,7 @@ namespace MultiAgent
             Timer.Start();
 
             // Initialize the level
-            Level.ParseLevel("MAmultiagentSort.lvl");
+            Level.ParseLevel("custom/rip.lvl");
 
             if (ShouldPrint >= 2)
             {
@@ -88,7 +88,7 @@ namespace MultiAgent
                 MaxMovesAllowed = int.MaxValue;
             }
 
-            while (finishedAgents.Any(f => !f.Value)) // while All goals not satisfied
+            while (finishedAgents.Any(f => !f.Value))
             {
                 var delegation = new Dictionary<Agent, SAState>(Level.Agents.Count);
                 foreach (var agent in Level.Agents)
@@ -288,6 +288,11 @@ namespace MultiAgent
 
                     // Calculate the minimum length of this agents solution.
                     var agentMinimumLength = Math.Min(minSolution - 1, solution[agent].Count - 1);
+
+                    if (finishedAgents[agent] && solution[agent].Count > minSolution)
+                    {
+                        finishedAgents[agent] = false;
+                    }
 
                     // Update the previous solution states with previous state - Solutions will always have the 0 index as just a state with no action
                     previousSolutionStates[agent] = solution[agent][agentMinimumLength].State;
