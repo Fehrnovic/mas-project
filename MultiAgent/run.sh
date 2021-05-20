@@ -4,7 +4,7 @@ set -e
 # Set the memory, frontier type, level, speed and timeout
 MEMORY="-Xmx16g"
 FRONTIER="-bfs"
-LEVEL="levels/custom/EOF.lvl"
+LEVEL="levels/complevels"
 SPEED=250
 TIMEOUT=180
 
@@ -21,4 +21,4 @@ RUN_STRING="dotnet run ${RUN_FLAG} --nologo --verbosity quiet"
 # Echo the command to be run
 echo "Running the following command inside the server: \"${RUN_STRING}\"..."
 
-java -jar server.jar -l $LEVEL -c "${RUN_STRING}" -g -s $SPEED -t $TIMEOUT
+java -jar server.jar -l $LEVEL -c "${RUN_STRING}" -t $TIMEOUT -o "EOF.zip"
